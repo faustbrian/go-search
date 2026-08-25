@@ -4,6 +4,11 @@ All notable changes to this module are documented here.
 
 ## Unreleased
 
+### Fixed
+
+- Regenerate the exported API baseline with the repository's exact Go 1.26
+  toolchain so `encoding/json` identities match CI.
+
 ### Changed
 
 - Exclude intentional nested modules from root local-proxy archives so local,
