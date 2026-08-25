@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 1.0.0 - 2026-08-25
+
 ### Fixed
 
 - Require bounded-load readiness to converge within a strict window instead
@@ -13,6 +15,7 @@
 
 ### Changed
 
+- Publish the module from its standalone `github.com/faustbrian/go-search/adapters/opensearch` identity while preserving its documented API and behavior.
 - Complete the destructive-cleanup decision record with explicit security,
   compatibility, and wire consequences for the required durable lifecycle
   mutation guard.

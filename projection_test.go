@@ -5,7 +5,7 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/faustbrian/golib/pkg/search"
+	"github.com/faustbrian/go-search"
 )
 
 func TestProjectionEventProducesIdempotentExternallyVersionedOperations(t *testing.T) {

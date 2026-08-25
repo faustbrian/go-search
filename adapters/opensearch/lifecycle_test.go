@@ -13,8 +13,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/faustbrian/golib/pkg/search"
-	adapter "github.com/faustbrian/golib/pkg/search/adapters/opensearch"
+	"github.com/faustbrian/go-search"
+	adapter "github.com/faustbrian/go-search/adapters/opensearch"
 )
 
 func TestLifecycleImplementsCreateResumableReindexVerifyCutoverAndCleanup(t *testing.T) {

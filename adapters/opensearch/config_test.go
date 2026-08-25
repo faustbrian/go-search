@@ -17,8 +17,8 @@ import (
 	"time"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
-	"github.com/faustbrian/golib/pkg/search"
-	adapter "github.com/faustbrian/golib/pkg/search/adapters/opensearch"
+	"github.com/faustbrian/go-search"
+	adapter "github.com/faustbrian/go-search/adapters/opensearch"
 	"github.com/opensearch-project/opensearch-go/v4/signer"
 	"github.com/opensearch-project/opensearch-go/v4/signer/awsv2"
 )

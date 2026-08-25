@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/faustbrian/golib/pkg/search"
+	"github.com/faustbrian/go-search"
 )
 
 func TestResultOwnsHitsHighlightsAggregationsAndDiagnostics(t *testing.T) {

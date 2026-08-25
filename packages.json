@@ -1,0 +1,42 @@
+{
+  "schema_version": 1,
+  "repository": "github.com/faustbrian/go-search",
+  "packages": [
+    {
+      "module_directory": ".",
+      "directory": ".",
+      "name": "search",
+      "import_path": "github.com/faustbrian/go-search",
+      "kind": "public",
+      "production": true,
+      "executable": true,
+      "coverage_required": true,
+      "build_required": true,
+      "build_tags": []
+    },
+    {
+      "module_directory": "adapters/opensearch",
+      "directory": ".",
+      "name": "opensearch",
+      "import_path": "github.com/faustbrian/go-search/adapters/opensearch",
+      "kind": "public",
+      "production": true,
+      "executable": true,
+      "coverage_required": true,
+      "build_required": true,
+      "build_tags": []
+    },
+    {
+      "module_directory": ".",
+      "directory": "searchtest",
+      "name": "searchtest",
+      "import_path": "github.com/faustbrian/go-search/searchtest",
+      "kind": "test support",
+      "production": false,
+      "executable": true,
+      "coverage_required": false,
+      "build_required": true,
+      "build_tags": []
+    }
+  ]
+}

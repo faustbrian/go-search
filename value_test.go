@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/faustbrian/golib/pkg/search"
+	"github.com/faustbrian/go-search"
 )
 
 func TestValuesPreserveExactTypedRepresentationsAndOwnership(t *testing.T) {

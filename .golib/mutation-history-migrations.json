@@ -1,0 +1,61 @@
+{
+  "schema_version": 3,
+  "reason": "Exact mutation checkpoints retained across history rewrites only when the approved old and replacement package input fingerprints, tool version, and report digest match.",
+  "verifier_migration_review": {
+    "gremlins_verifier_sha256": "9a9499ff68a8dfd49a0be7995590297a8ee563a1aa226bfd8b9361dc53058108",
+    "reason": "Each listed checkpoint was executed with the complete current Gremlins semantic patch set introduced by ac300cf3; the four omitted checkpoints require fresh campaigns.",
+    "reviewed_at": "2026-08-20"
+  },
+  "verifier_migrations": [
+    {
+      "execution_revision": "05947f57f731152e8bad708b238ea3f6e0509ee0",
+      "gate_input_digest": "577a46adc566318f7949f104798ce0982dfe05f7646e0e0e067385e1e8c3f40e",
+      "gremlins_verifier_sha256": "9a9499ff68a8dfd49a0be7995590297a8ee563a1aa226bfd8b9361dc53058108",
+      "gremlins_version": "v0.6.0",
+      "module": ".",
+      "package": ".",
+      "report_sha256": "3b898577d988b59f0b8d5f4ddc48ddd64efc35c0c20f1e5a975c772bbe120219"
+    },
+    {
+      "execution_revision": "5ead3d540eb6109a6bc8cfc2a2449640cb847108",
+      "gate_input_digest": "78c76d9a07a3f4c8d62c4e28a2a19c95b8b85bfb2f5e40d10598fd537cd1197a",
+      "gremlins_verifier_sha256": "9a9499ff68a8dfd49a0be7995590297a8ee563a1aa226bfd8b9361dc53058108",
+      "gremlins_version": "v0.6.0",
+      "module": "adapters/opensearch",
+      "package": ".",
+      "report_sha256": "a023156ef354c941d8a47d12d4350d79446c8ba0f50038bfa49e97c7c096202d"
+    }
+  ],
+  "entries": [
+    {
+      "execution_revision": "8e134b9241b3b4af768cd6bb6620ec3d668a20c3",
+      "gate_input_digest": "14fefd119233639fb40401c24ff9ba780be2f7be2623c274107fa5cec11937bb",
+      "gremlins_version": "v0.6.0",
+      "migration_reason": "corrected-real-cluster-alias-observer",
+      "module": "adapters/opensearch",
+      "package": ".",
+      "replacement_gate_input_digest": "1caa101b752748d05bd268135bbe87e5438f8fcb4c45fbdd90f42dce290d3868",
+      "report_sha256": "99a7874cfd79bebf768ae365e355816a64bf88279f6f72e0f822451490f4c680"
+    },
+    {
+      "module": ".",
+      "package": ".",
+      "execution_revision": "05947f57f731152e8bad708b238ea3f6e0509ee0",
+      "gate_input_digest": "577a46adc566318f7949f104798ce0982dfe05f7646e0e0e067385e1e8c3f40e",
+      "replacement_gate_input_digest": "506cfa22ad090b0d2c2e9b4352e8a0202d026e6b81b690d8ad39faf7ac35eeab",
+      "gremlins_version": "v0.6.0",
+      "gremlins_verifier_sha256": "9a9499ff68a8dfd49a0be7995590297a8ee563a1aa226bfd8b9361dc53058108",
+      "report_sha256": "3b898577d988b59f0b8d5f4ddc48ddd64efc35c0c20f1e5a975c772bbe120219"
+    },
+    {
+      "module": "adapters/opensearch",
+      "package": ".",
+      "execution_revision": "5ead3d540eb6109a6bc8cfc2a2449640cb847108",
+      "gate_input_digest": "78c76d9a07a3f4c8d62c4e28a2a19c95b8b85bfb2f5e40d10598fd537cd1197a",
+      "replacement_gate_input_digest": "a99d755d771968495240e6227f20049ff26a2c079a0227fe93d5978a2daaee45",
+      "gremlins_version": "v0.6.0",
+      "gremlins_verifier_sha256": "9a9499ff68a8dfd49a0be7995590297a8ee563a1aa226bfd8b9361dc53058108",
+      "report_sha256": "a023156ef354c941d8a47d12d4350d79446c8ba0f50038bfa49e97c7c096202d"
+    }
+  ]
+}

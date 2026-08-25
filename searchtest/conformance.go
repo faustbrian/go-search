@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"slices"
 
-	"github.com/faustbrian/golib/pkg/search"
+	"github.com/faustbrian/go-search"
 )
 
 // ConformanceAdapter is the shared indexing and query surface exercised by

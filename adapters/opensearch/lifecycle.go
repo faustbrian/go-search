@@ -9,7 +9,7 @@ import (
 	"sync/atomic"
 	"unicode/utf8"
 
-	"github.com/faustbrian/golib/pkg/search"
+	"github.com/faustbrian/go-search"
 )
 
 var (

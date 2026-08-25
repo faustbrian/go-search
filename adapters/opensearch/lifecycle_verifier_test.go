@@ -12,7 +12,7 @@ import (
 	"testing"
 	"time"
 
-	adapter "github.com/faustbrian/golib/pkg/search/adapters/opensearch"
+	adapter "github.com/faustbrian/go-search/adapters/opensearch"
 )
 
 func TestVerifyIndexRequiresSemanticVerifierAfterCountPreflight(t *testing.T) {

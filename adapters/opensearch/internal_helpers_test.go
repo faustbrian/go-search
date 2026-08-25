@@ -15,7 +15,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/faustbrian/golib/pkg/search"
+	"github.com/faustbrian/go-search"
 )
 
 type internalRoundTripFunc func(*http.Request) (*http.Response, error)

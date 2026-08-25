@@ -9,7 +9,7 @@ import (
 	"testing"
 	"time"
 
-	adapter "github.com/faustbrian/golib/pkg/search/adapters/opensearch"
+	adapter "github.com/faustbrian/go-search/adapters/opensearch"
 	official "github.com/opensearch-project/opensearch-go/v4"
 	"github.com/opensearch-project/opensearch-go/v4/opensearchtransport"
 )

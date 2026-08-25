@@ -1,0 +1,301 @@
+{
+  "schema_version": 1,
+  "repository": "github.com/faustbrian/go-search",
+  "go_version": "1.26.6",
+  "modules": [
+    {
+      "directory": ".",
+      "module_path": "github.com/faustbrian/go-search",
+      "go_version": "1.26.6",
+      "packages": [
+        {
+          "module_directory": ".",
+          "directory": ".",
+          "name": "search",
+          "import_path": "github.com/faustbrian/go-search",
+          "kind": "public",
+          "production": true,
+          "executable": true,
+          "coverage_required": true,
+          "build_required": true,
+          "build_tags": []
+        },
+        {
+          "module_directory": ".",
+          "directory": "searchtest",
+          "name": "searchtest",
+          "import_path": "github.com/faustbrian/go-search/searchtest",
+          "kind": "test support",
+          "production": false,
+          "executable": true,
+          "coverage_required": false,
+          "build_required": true,
+          "build_tags": []
+        }
+      ],
+      "purpose": "`search` provides backend-neutral contracts for bounded document indexing, typed querying, cursor pagination, schema migration, and reconciliation. Search indexes are rebuildable derived state; an application datastore remains the source of truth.",
+      "lifecycle": "stable",
+      "kind": "public library",
+      "releasable": true,
+      "family": "integration-and-data-movement",
+      "family_label": "Integration And Data Movement",
+      "family_description": "Bounded external I/O, data movement, provider boundaries, and derived search state.",
+      "family_order": 7,
+      "version": "v1.0.0",
+      "tag_prefix": "v",
+      "owned_dependencies": [],
+      "reverse_owned_dependencies": [
+        "github.com/faustbrian/go-search/adapters/opensearch"
+      ],
+      "external_runtime_dependencies": [],
+      "required_services": [],
+      "build_tags": [],
+      "test_tags": [],
+      "interoperability_tools": [],
+      "specifications": [],
+      "conformance_corpora": [],
+      "provenance": [],
+      "goal_files": [
+        ".ai/GOAL.md",
+        ".ai/GOAL_HARDEN.md"
+      ],
+      "goal_status": "implementation-evidence-inventoried",
+      "goal_evidence": [
+        {
+          "file": ".ai/GOAL.md",
+          "requirements_sha256": "c4850c3d8ce21744cd617d873857378dfcc63d7e2e0fa249af766b28199856a7",
+          "implementation_evidence": [
+            "CHANGELOG.md",
+            "README.md",
+            "docs/README.md",
+            "docs/api.md",
+            "docs/security.md"
+          ],
+          "verification_gates": [
+            "format-check",
+            "tidy-check",
+            "safety",
+            "vet",
+            "test",
+            "race",
+            "coverage",
+            "lint",
+            "staticcheck",
+            "vulnerability",
+            "secrets",
+            "licenses",
+            "sbom",
+            "fuzz",
+            "mutation",
+            "nilaway",
+            "docs",
+            "api",
+            "conformance",
+            "interoperability",
+            "benchmark"
+          ],
+          "implementation_status": "implemented-requires-fresh-verification"
+        },
+        {
+          "file": ".ai/GOAL_HARDEN.md",
+          "requirements_sha256": "780d22b93cffba31656ed92ac47de6c4306901d846f30a76f07b1979e19346b9",
+          "implementation_evidence": [
+            "CHANGELOG.md",
+            "README.md",
+            "docs/README.md",
+            "docs/api.md",
+            "docs/security.md"
+          ],
+          "verification_gates": [
+            "format-check",
+            "tidy-check",
+            "safety",
+            "vet",
+            "test",
+            "race",
+            "coverage",
+            "lint",
+            "staticcheck",
+            "vulnerability",
+            "secrets",
+            "licenses",
+            "sbom",
+            "fuzz",
+            "mutation",
+            "nilaway",
+            "docs",
+            "api",
+            "conformance",
+            "interoperability",
+            "benchmark"
+          ],
+          "implementation_status": "implemented-requires-fresh-verification"
+        }
+      ],
+      "gates": {
+        "api_compatibility": true,
+        "benchmarks": true,
+        "conformance": false,
+        "coverage": true,
+        "documentation": true,
+        "fuzz": true,
+        "lint": true,
+        "mutation": true,
+        "race": true,
+        "security": true,
+        "tests": true
+      }
+    },
+    {
+      "directory": "adapters/opensearch",
+      "module_path": "github.com/faustbrian/go-search/adapters/opensearch",
+      "go_version": "1.26.6",
+      "packages": [
+        {
+          "module_directory": "adapters/opensearch",
+          "directory": ".",
+          "name": "opensearch",
+          "import_path": "github.com/faustbrian/go-search/adapters/opensearch",
+          "kind": "public",
+          "production": true,
+          "executable": true,
+          "coverage_required": true,
+          "build_required": true,
+          "build_tags": []
+        }
+      ],
+      "purpose": "This module is the first production adapter for `github.com/faustbrian/go-search`. It translates typed requests to the OpenSearch API without making engine-specific ranking behavior part of the core contract.",
+      "lifecycle": "stable",
+      "kind": "adapter",
+      "releasable": true,
+      "family": "integration-and-data-movement",
+      "family_label": "Integration And Data Movement",
+      "family_description": "Bounded external I/O, data movement, provider boundaries, and derived search state.",
+      "family_order": 7,
+      "version": "v1.0.0",
+      "tag_prefix": "adapters/opensearch/v",
+      "owned_dependencies": [
+        "github.com/faustbrian/go-search"
+      ],
+      "reverse_owned_dependencies": [],
+      "external_runtime_dependencies": [
+        "github.com/aws/aws-sdk-go-v2",
+        "github.com/opensearch-project/opensearch-go/v4"
+      ],
+      "required_services": [
+        "opensearch"
+      ],
+      "build_tags": [],
+      "test_tags": [
+        "integration"
+      ],
+      "interoperability_tools": [
+        "OpenSearch 2.19.6",
+        "OpenSearch 3.8.0",
+        "opensearch-go/v4 v4.7.3"
+      ],
+      "specifications": [
+        "OpenSearch REST API 2.19.6 and 3.8.0"
+      ],
+      "conformance_corpora": [
+        "Pinned OpenSearch 2.19.6 and 3.8.0 source and REST API matrix",
+        "Real-backend shared semantics, lifecycle, failure, and upgrade evidence"
+      ],
+      "provenance": [
+        "adapters/opensearch/specification/manifest.tsv"
+      ],
+      "goal_files": [
+        "adapters/opensearch/.ai/GOAL.md",
+        "adapters/opensearch/.ai/GOAL_HARDEN.md"
+      ],
+      "goal_status": "implementation-evidence-inventoried",
+      "goal_evidence": [
+        {
+          "file": "adapters/opensearch/.ai/GOAL.md",
+          "requirements_sha256": "fb9d1158a872284409efb71ee29ea354f51a89bb5e3b757f0ec0a2c272229fd9",
+          "implementation_evidence": [
+            "adapters/opensearch/CHANGELOG.md",
+            "adapters/opensearch/README.md",
+            "adapters/opensearch/docs/README.md",
+            "adapters/opensearch/docs/compatibility.md",
+            "adapters/opensearch/docs/hardening.md",
+            "adapters/opensearch/docs/security.md"
+          ],
+          "verification_gates": [
+            "format-check",
+            "tidy-check",
+            "safety",
+            "vet",
+            "test",
+            "race",
+            "coverage",
+            "lint",
+            "staticcheck",
+            "vulnerability",
+            "secrets",
+            "licenses",
+            "sbom",
+            "fuzz",
+            "mutation",
+            "nilaway",
+            "docs",
+            "api",
+            "conformance",
+            "interoperability",
+            "benchmark"
+          ],
+          "implementation_status": "implemented-requires-fresh-verification"
+        },
+        {
+          "file": "adapters/opensearch/.ai/GOAL_HARDEN.md",
+          "requirements_sha256": "d57d2de9757045e55952953c361a7851ffe2fdc7a13605ee25dbea4652ffd7d7",
+          "implementation_evidence": [
+            "adapters/opensearch/CHANGELOG.md",
+            "adapters/opensearch/README.md",
+            "adapters/opensearch/docs/README.md",
+            "adapters/opensearch/docs/compatibility.md",
+            "adapters/opensearch/docs/hardening.md",
+            "adapters/opensearch/docs/security.md"
+          ],
+          "verification_gates": [
+            "format-check",
+            "tidy-check",
+            "safety",
+            "vet",
+            "test",
+            "race",
+            "coverage",
+            "lint",
+            "staticcheck",
+            "vulnerability",
+            "secrets",
+            "licenses",
+            "sbom",
+            "fuzz",
+            "mutation",
+            "nilaway",
+            "docs",
+            "api",
+            "conformance",
+            "interoperability",
+            "benchmark"
+          ],
+          "implementation_status": "implemented-requires-fresh-verification"
+        }
+      ],
+      "gates": {
+        "api_compatibility": true,
+        "benchmarks": true,
+        "conformance": true,
+        "coverage": true,
+        "documentation": true,
+        "fuzz": true,
+        "lint": true,
+        "mutation": true,
+        "race": true,
+        "security": true,
+        "tests": true
+      }
+    }
+  ]
+}

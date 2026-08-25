@@ -3,8 +3,8 @@ package searchtest_test
 import (
 	"testing"
 
-	"github.com/faustbrian/golib/pkg/search"
-	"github.com/faustbrian/golib/pkg/search/searchtest"
+	"github.com/faustbrian/go-search"
+	"github.com/faustbrian/go-search/searchtest"
 )
 
 func TestFakeConformsToDeclaredSharedSemantics(t *testing.T) {

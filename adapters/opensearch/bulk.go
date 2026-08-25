@@ -7,7 +7,7 @@ import (
 	"errors"
 	"net/http"
 
-	"github.com/faustbrian/golib/pkg/search"
+	"github.com/faustbrian/go-search"
 )
 
 // Bulk applies one bounded single-tenant mutation unit. It never retries and

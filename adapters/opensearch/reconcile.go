@@ -5,7 +5,7 @@ import (
 	"errors"
 	"time"
 
-	"github.com/faustbrian/golib/pkg/search"
+	"github.com/faustbrian/go-search"
 )
 
 const ReconciliationPITKeepAlive = 2 * time.Minute

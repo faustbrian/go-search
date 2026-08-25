@@ -6,7 +6,7 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/faustbrian/golib/pkg/search"
+	"github.com/faustbrian/go-search"
 )
 
 func fakeBranchOperation(action search.WriteAction, id string, version uint64, source string) search.WriteOperation {

@@ -10,7 +10,7 @@ root=$(git rev-parse --show-toplevel)
 
 opensearch_run_id="$(date +%s)-$$-$(od -An -N6 -tx1 /dev/urandom | tr -d ' \n')"
 owner_label="$opensearch_owner_label_key=$opensearch_run_id"
-benchmark_evidence_dir="${OPENSEARCH_BENCHMARK_EVIDENCE_DIR:-$root/.artifacts/pkg/search/adapters/opensearch/benchmark-$opensearch_run_id}"
+benchmark_evidence_dir="${OPENSEARCH_BENCHMARK_EVIDENCE_DIR:-$root/.artifacts/adapters/opensearch/benchmark-$opensearch_run_id}"
 mkdir -p "$benchmark_evidence_dir"
 
 releases='old new'

@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/faustbrian/golib/pkg/search"
+	"github.com/faustbrian/go-search"
 )
 
 func TestPointInTimeTrackerCloseMakesLaterReleaseIdempotent(t *testing.T) {

@@ -1,3 +1,3 @@
-module github.com/faustbrian/golib/pkg/search
+module github.com/faustbrian/go-search
 
 go 1.26.6

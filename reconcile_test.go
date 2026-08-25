@@ -9,7 +9,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/faustbrian/golib/pkg/search"
+	"github.com/faustbrian/go-search"
 )
 
 func TestReconcilerDetectsAndRepairsMissingStaleAndOrphanedDerivedState(t *testing.T) {

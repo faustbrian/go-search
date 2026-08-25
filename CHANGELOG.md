@@ -4,6 +4,12 @@ All notable changes to this module are documented here.
 
 ## Unreleased
 
+## 1.0.0 - 2026-08-25
+
+### Changed
+
+- Publish the module from its standalone `github.com/faustbrian/go-search` identity while preserving its documented API and behavior.
+
 ### Documentation
 
 - Link the package README to the repository-wide Golib documentation portal.

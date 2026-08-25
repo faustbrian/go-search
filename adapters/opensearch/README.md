@@ -1,7 +1,7 @@
 # OpenSearch adapter
 
 This module is the first production adapter for
-`github.com/faustbrian/golib/pkg/search`. It translates typed requests to the
+`github.com/faustbrian/go-search`. It translates typed requests to the
 OpenSearch API without making engine-specific ranking behavior part of the core
 contract.
 

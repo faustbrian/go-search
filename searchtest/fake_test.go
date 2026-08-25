@@ -6,8 +6,8 @@ import (
 	"slices"
 	"testing"
 
-	"github.com/faustbrian/golib/pkg/search"
-	"github.com/faustbrian/golib/pkg/search/searchtest"
+	"github.com/faustbrian/go-search"
+	"github.com/faustbrian/go-search/searchtest"
 )
 
 func TestFakeProvidesDeterministicTenantIsolatedContractBehavior(t *testing.T) {

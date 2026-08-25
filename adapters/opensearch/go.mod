@@ -1,4 +1,4 @@
-module github.com/faustbrian/golib/pkg/search/adapters/opensearch
+module github.com/faustbrian/go-search/adapters/opensearch
 
 go 1.26.6
 
@@ -6,7 +6,7 @@ tool golang.org/x/perf/cmd/benchstat
 
 require (
 	github.com/aws/aws-sdk-go-v2 v1.43.0
-	github.com/faustbrian/golib/pkg/search v0.0.0
+	github.com/faustbrian/go-search v1.0.0
 	github.com/opensearch-project/opensearch-go/v4 v4.7.3
 )
 

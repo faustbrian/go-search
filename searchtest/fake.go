@@ -13,7 +13,7 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/faustbrian/golib/pkg/search"
+	"github.com/faustbrian/go-search"
 )
 
 var ErrInvalidFake = errors.New("searchtest: valid bounded limits are required")

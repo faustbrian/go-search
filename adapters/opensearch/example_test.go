@@ -8,8 +8,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/faustbrian/golib/pkg/search"
-	"github.com/faustbrian/golib/pkg/search/adapters/opensearch"
+	"github.com/faustbrian/go-search"
+	"github.com/faustbrian/go-search/adapters/opensearch"
 )
 
 type exampleTransport struct{}

@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 
-	"github.com/faustbrian/golib/pkg/search"
+	"github.com/faustbrian/go-search"
 )
 
 // WriteAuthorization is one validated, bounded, single-tenant write intent.
