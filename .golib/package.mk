@@ -31,7 +31,7 @@ fuzz:
 	$(GO) test -run='^$$' -fuzz=FuzzRequestValidateAndFingerprint -fuzztime=$(FUZZ_TIME) .
 
 mutation:
-	$$(git rev-parse --show-toplevel)/scripts/check-mutation.sh .
+	$$(git rev-parse --show-toplevel)/.golib/scripts/check-mutation.sh .
 
 benchmark:
 	$(GO) test -run='^$$' -bench=. -benchmem .
@@ -57,7 +57,7 @@ docs:
 	$(GO) test ./...
 
 api-compat:
-	$$(git rev-parse --show-toplevel)/scripts/check-api-baseline.sh .
+	$$(git rev-parse --show-toplevel)/.golib/scripts/check-api-baseline.sh .
 
 clean-consumer:
 	@./scripts/check-clean-consumer.sh

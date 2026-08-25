@@ -34,7 +34,7 @@ fuzz:
 	$(GO) test -run='^$$' -fuzz=FuzzLifecycleResponseBoundary -fuzztime=$(FUZZ_TIME) .
 
 mutation:
-	$$(git rev-parse --show-toplevel)/scripts/check-mutation.sh adapters/opensearch
+	$$(git rev-parse --show-toplevel)/.golib/scripts/check-mutation.sh adapters/opensearch
 
 benchmark:
 	$(GO) test -run='^$$' -bench=. -benchmem .
@@ -92,7 +92,7 @@ operations:
 	$(GO) test -run='^TestOperationalArtifactsAndIncidentDrills$$' -count=1 .
 
 api-compat:
-	$$(git rev-parse --show-toplevel)/scripts/check-api-baseline.sh adapters/opensearch
+	$$(git rev-parse --show-toplevel)/.golib/scripts/check-api-baseline.sh adapters/opensearch
 
 clean-consumer:
 	@./scripts/check-clean-consumer.sh
