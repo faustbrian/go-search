@@ -6,6 +6,9 @@ All notable changes to this module are documented here.
 
 ### Fixed
 
+- Reconcile the OpenSearch adapter with the final standalone root archive
+  after API-baseline generation changed its module checksum.
+
 - Regenerate the exported API baseline with the repository's exact Go 1.26
   toolchain so `encoding/json` identities match CI.
 
