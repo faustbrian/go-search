@@ -4,6 +4,8 @@ All notable changes to this module are documented here.
 
 ## Unreleased
 
+## 1.0.0 - 2026-08-25
+
 ### Fixed
 
 - Reconcile the OpenSearch adapter with the final standalone root archive
@@ -28,8 +30,6 @@ All notable changes to this module are documented here.
 - Harden standalone documentation validation with deterministic spelling and
   link checks, package-specific documentation gates, and repository-local
   contributor guidance.
-
-## 1.0.0 - 2026-08-25
 
 ### Changed
 
