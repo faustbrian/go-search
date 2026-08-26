@@ -1,4 +1,4 @@
-# Hardening and real-cluster exercises
+# Real-cluster testing
 
 The conformance harness runs the complete adapter workflow against exact
 OpenSearch `2.19.6` and `3.8.0` containers. Each container is limited to one

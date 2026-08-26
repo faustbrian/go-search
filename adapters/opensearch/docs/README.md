@@ -14,4 +14,4 @@
 - [Upgrades and backup boundaries](upgrades.md)
 - [Troubleshooting](troubleshooting.md)
 - [API and compatibility inventory](api-inventory.md)
-- [Hardening and real-cluster exercises](hardening.md)
+- [Real-cluster testing](real-cluster-testing.md)
