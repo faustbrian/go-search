@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Documentation
+
+- Remove completed implementation plans and link to package-owned guidance.
+
 ## 1.0.0 - 2026-08-25
 
 ### Fixed
@@ -11,7 +15,7 @@
 
 ### Documentation
 
-- Link the package README to the repository-wide Golib documentation portal.
+- Link the adapter README to package-owned documentation.
 
 ### Changed
 
