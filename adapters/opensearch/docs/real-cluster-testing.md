@@ -1,4 +1,4 @@
-# Hardening and real-cluster exercises
+# Real-cluster testing
 
 The conformance harness runs the complete adapter workflow against exact
 OpenSearch `2.19.6` and `3.8.0` containers. Each container is limited to one
@@ -34,7 +34,7 @@ bulk outcome class, 429/503 overload, mapping rejection, version conflicts,
 cluster blocks, credential rotation, TLS policy failures, discovery changes,
 circuit transitions, queue pressure, observer failures, and cleanup errors.
 Race, repeated stress, fuzz, exact coverage, mutation, benchmarks, security,
-API, documentation, and clean-consumer gates run independently of Docker.
+API and documentation gates run independently of Docker.
 Configuration validation also places absolute caps on in-flight admission,
 queued callers, locale analyzers, and discovery trust rules before allocating
 channels or cloning configuration collections.

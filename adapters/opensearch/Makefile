@@ -1,40 +1,11 @@
 GO ?= go
-FUZZ_TIME ?= 10s
 SOAK_DURATION ?= 5s
 STRESS_COUNT ?= 10
 INTEGRATION_WRITE_BENCH_TIME ?= 1x
 INTEGRATION_READ_BENCH_TIME ?= 20x
 INTEGRATION_BENCH_COUNT ?= 10
 
-.PHONY: api-compat benchmark benchmark-integration check check-local check-release clean-consumer conformance coverage docs fault format-check fuzz image-pins integration integration-matrix interoperability leak mutation operations race rolling-upgrade safety security-matrix soak soak-integration specification-sources stress test tidy-check vet vuln
-
-format-check:
-	@files="$$(gofmt -l $$(find . -name '*.go' -not -path './vendor/*'))"; \
-	if [ -n "$$files" ]; then echo "unformatted Go files:"; echo "$$files"; exit 1; fi
-
-tidy-check:
-	$(GO) mod tidy -diff
-
-vet:
-	$(GO) vet ./...
-
-test:
-	$(GO) test ./...
-
-race:
-	$(GO) test -race ./...
-
-coverage:
-	@./scripts/check-coverage.sh
-
-fuzz:
-	$(GO) test -run='^$$' -fuzz=FuzzInfoResponseBoundary -fuzztime=$(FUZZ_TIME) .
-	$(GO) test -run='^$$' -fuzz=FuzzSearchResponseBoundary -fuzztime=$(FUZZ_TIME) .
-	$(GO) test -run='^$$' -fuzz=FuzzBulkResponseBoundary -fuzztime=$(FUZZ_TIME) .
-	$(GO) test -run='^$$' -fuzz=FuzzLifecycleResponseBoundary -fuzztime=$(FUZZ_TIME) .
-
-mutation:
-	$$(git rev-parse --show-toplevel)/.golib/scripts/check-mutation.sh adapters/opensearch
+.PHONY: benchmark benchmark-integration conformance docs fault image-pins integration integration-matrix interoperability leak operations rolling-upgrade security-matrix soak soak-integration specification-sources stress
 
 benchmark:
 	$(GO) test -run='^$$' -bench=. -benchmem .
@@ -90,22 +61,3 @@ docs:
 
 operations:
 	$(GO) test -run='^TestOperationalArtifactsAndIncidentDrills$$' -count=1 .
-
-api-compat:
-	$$(git rev-parse --show-toplevel)/.golib/scripts/check-api-baseline.sh adapters/opensearch
-
-clean-consumer:
-	@./scripts/check-clean-consumer.sh
-
-safety:
-	@! rg -n --glob '*.go' --glob '!*_test.go' '(^|[[:space:]])"unsafe"|//go:linkname|import "C"' . \
-		|| { echo 'unsafe, cgo, or go:linkname found'; exit 1; }
-
-vuln:
-	$(GO) run golang.org/x/vuln/cmd/govulncheck@v1.1.4 ./...
-
-check-local: tidy-check format-check vet test race coverage fuzz mutation benchmark stress leak fault soak docs api-compat clean-consumer safety image-pins specification-sources operations vuln
-
-check-release: check-local conformance interoperability security-matrix
-
-check: check-release

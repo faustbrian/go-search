@@ -2,6 +2,17 @@
 
 ## Unreleased
 
+### Changed
+
+- Adopt the root repository's released `go-library-tools` v1.0.5 contract for
+  shared checks without changing adapter runtime behavior or public APIs.
+- Retain OpenSearch-specific integration, conformance, interoperability, API,
+  and benchmark assets in the standalone adapter module.
+
+### Documentation
+
+- Remove completed implementation plans and link to package-owned guidance.
+
 ## 1.0.0 - 2026-08-25
 
 ### Fixed
@@ -11,7 +22,7 @@
 
 ### Documentation
 
-- Link the package README to the repository-wide Golib documentation portal.
+- Link the adapter README to package-owned documentation.
 
 ### Changed
 

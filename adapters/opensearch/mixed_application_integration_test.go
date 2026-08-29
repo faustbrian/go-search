@@ -152,7 +152,7 @@ func buildFrozenMixedApplicationPeer(t *testing.T) string {
 	}
 	if err := os.WriteFile(
 		filepath.Join(directory, "go.mod"),
-		[]byte("module github.com/faustbrian/golib/internal/mixedappv1\n\ngo 1.26.6\n"),
+		[]byte("module example.com/search-mixedapp-v1\n\ngo 1.26.6\n"),
 		0o600,
 	); err != nil {
 		t.Fatal(err)

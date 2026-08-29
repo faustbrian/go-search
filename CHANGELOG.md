@@ -4,6 +4,22 @@ All notable changes to this module are documented here.
 
 ## Unreleased
 
+### Changed
+
+- Adopt the released `go-library-tools` v1.0.5 repository contract and
+  immutable reusable CI workflow without changing runtime behavior or public
+  APIs.
+- Store package-owned mutation bootstrap and ledger evidence under
+  `.verification` so it remains available to the shared verification runner.
+
+- Align isolated checks and integration fixtures with standalone package
+  module paths.
+
+### Documentation
+
+- Remove completed implementation plans and replace archived monorepo links
+  with repository-local documentation.
+
 ## 1.0.0 - 2026-08-25
 
 ### Fixed
@@ -37,7 +53,7 @@ All notable changes to this module are documented here.
 
 ### Documentation
 
-- Link the package README to the repository-wide Golib documentation portal.
+- Add package discovery documentation.
 
 - Make cursor time single-owner through `CursorCodec.Deadline` and `Remaining`,
   so adapters cannot create or extend backend state past signed cursor expiry.
