@@ -39,6 +39,7 @@ func TestDocumentRejectsHostileJSONStructure(t *testing.T) {
 		{"excessive depth", func(limits *search.Limits) { limits.MaxJSONDepth = 2 }, json.RawMessage(`{"outer":{"too":{"deep":true}}}`), search.ErrJSONDepthLimit},
 		{"high field count within byte limit", func(*search.Limits) {}, tooManyFields, search.ErrJSONNodeLimit},
 		{"duplicate object keys", func(*search.Limits) {}, json.RawMessage(`{"same":1,"s\u0061me":2}`), search.ErrDuplicateJSONKey},
+		{"malformed nested container", func(*search.Limits) {}, json.RawMessage(`{"values":[1,2}`), search.ErrInvalidSource},
 	} {
 		t.Run(test.name, func(t *testing.T) {
 			t.Parallel()

@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+### Changed
+
+- Adopt the root repository's released `go-library-tools` v1.0.5 contract for
+  shared checks without changing adapter runtime behavior or public APIs.
+- Retain OpenSearch-specific integration, conformance, interoperability, API,
+  and benchmark assets in the standalone adapter module.
+
 ### Documentation
 
 - Remove completed implementation plans and link to package-owned guidance.

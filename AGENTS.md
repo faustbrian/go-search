@@ -167,8 +167,8 @@ shown here.
   abstraction; wrappers require a stable policy or portability boundary.
 - Generated code and vendored corpora MUST record source, version, checksum,
   license, generation command, and update procedure.
-- Vulnerability, secret, license, SBOM, provenance, and clean-consumer checks
-  are release gates.
+- Vulnerability, secret, license, SBOM, provenance, and API checks are release
+  gates.
 
 ## Documentation
 

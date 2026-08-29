@@ -70,9 +70,9 @@ See the [documentation index](docs/README.md), [API guide](docs/api.md),
 make check
 ```
 
-Callers should set `GOCACHE` to a disposable directory for local and CI runs.
+The `golib` executor creates task-owned disposable Go caches for its checks.
 The module gate enforces exact statement coverage and supports race, fuzz,
-mutation, benchmark, API, and clean-consumer checks.
+mutation, benchmark, API, and security checks.
 
 ## License
 
