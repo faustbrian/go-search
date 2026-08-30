@@ -121,7 +121,9 @@
         "opensearch-go/v4 v4.7.3"
       ],
       "specifications": [
-        "OpenSearch REST API 2.19.6 and 3.8.0"
+        "OpenSearch REST API 2.19.6",
+        "OpenSearch REST API 3.8.0",
+        "OpenSearch Go client 4.7.3"
       ],
       "conformance_corpora": [
         "Pinned OpenSearch 2.19.6 and 3.8.0 source and REST API matrix",
