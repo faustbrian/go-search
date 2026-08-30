@@ -9,6 +9,9 @@ All notable changes to this module are documented here.
 - Align isolated checks and integration fixtures with standalone package
   module paths.
 
+- Adopt the released shared repository tooling while retaining the package's
+  OpenSearch compatibility, lifecycle, recovery, and security matrices.
+
 ### Documentation
 
 - Remove completed implementation plans and replace archived monorepo links
