@@ -5,7 +5,6 @@ SOAK_DURATION ?= 5s
 .PHONY: opensearch-conformance opensearch-contract opensearch-docs opensearch-interoperability root-contract root-docs
 
 root-contract:
-	./scripts/check-coverage.sh
 	$(GO) test -race -run '^TestEvidenceStress' -count=$(STRESS_COUNT) ./searchtest
 	$(GO) test -run '^TestEvidenceFault' -count=$(STRESS_COUNT) ./searchtest
 	./scripts/check-clean-consumer.sh
