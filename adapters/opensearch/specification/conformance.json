@@ -1,0 +1,498 @@
+{
+  "schema_version": 1,
+  "decisions": [
+    {
+      "id": "OPENSEARCH-DEC-001",
+      "authoritative_sources": [
+        "opensearch-3-search-api",
+        "opensearch-2-health-api",
+        "opensearch-go-source"
+      ],
+      "executable_evidence": [
+        "TestSupportedOpenSearchVersionsIncludesCurrentRelease",
+        "TestRealOpenSearchConformance"
+      ],
+      "fixtures": [],
+      "fuzz": [],
+      "interoperability_evidence": [
+        "adapters/opensearch/scripts/test-version-matrix.sh"
+      ],
+      "interoperability_classification": "provider agreement",
+      "differential_evidence": [
+        "adapters/opensearch/integration_test.go"
+      ],
+      "differential_classification": "maintained peer agreement",
+      "public_behavior": [
+        "The supported matrix is exactly OpenSearch 2.19.6, OpenSearch 3.8.0, and opensearch-go/v4 4.7.3; no other patch, plugin, analyzer, mapping, distribution, or managed-service profile is implied compatible."
+      ]
+    },
+    {
+      "id": "OPENSEARCH-DEC-002",
+      "authoritative_sources": [
+        "opensearch-go-source"
+      ],
+      "executable_evidence": [
+        "TestNewRejectsUnsafeOrAmbiguousTransportConfiguration",
+        "TestClientSelectsConfiguredNodesWithoutImplicitRetries",
+        "TestBorrowedTransportRemainsCallerOwned",
+        "TestOfficialAWSSignerRetrievesRotatedCredentialsForEveryRequest"
+      ],
+      "fixtures": [],
+      "fuzz": [
+        "FuzzInfoResponseBoundary"
+      ],
+      "interoperability_evidence": [],
+      "interoperability_classification": "not assessed",
+      "differential_evidence": [],
+      "differential_classification": "not assessed",
+      "public_behavior": [
+        "Endpoints, TLS, proxies, discovery trust, transport ownership, admission, and credentials are explicit and bounded; credentials refresh per request, borrowed transports remain caller-owned, and each operation makes one downstream attempt."
+      ]
+    },
+    {
+      "id": "OPENSEARCH-DEC-003",
+      "authoritative_sources": [
+        "opensearch-go-source"
+      ],
+      "executable_evidence": [
+        "TestClientSelectsConfiguredNodesWithoutImplicitRetries",
+        "TestBulkReturnsPerItemUnknownOutcomesWhenTransportOutcomeIsAmbiguous"
+      ],
+      "fixtures": [],
+      "fuzz": [],
+      "interoperability_evidence": [],
+      "interoperability_classification": "not assessed",
+      "differential_evidence": [],
+      "differential_classification": "not assessed",
+      "public_behavior": [
+        "Security, resource, compatibility, and wire consequences are included in the selected behavior below. Every adapter operation performs one bounded transport attempt. Ambiguous writes and bulk items are reported as unknown, not silently retried. Durable callers reconcile ID and external version before retrying."
+      ]
+    },
+    {
+      "id": "OPENSEARCH-DEC-004",
+      "authoritative_sources": [
+        "opensearch-go-source"
+      ],
+      "executable_evidence": [
+        "TestPoolRotationAndEndpointOrder",
+        "TestDiscoverRequiresAnExplicitBoundedTrustPolicy",
+        "TestDiscoverRejectsUntrustedOrMalformedTopologyWithoutChangingSeeds"
+      ],
+      "fixtures": [],
+      "fuzz": [],
+      "interoperability_evidence": [],
+      "interoperability_classification": "not assessed",
+      "differential_evidence": [],
+      "differential_classification": "not assessed",
+      "public_behavior": [
+        "Security, resource, compatibility, and wire consequences are included in the selected behavior below. Seed rotation is deterministic and bounded. Discovery is explicit, accepts only bounded data-node results matching a DNS suffix or IP prefix allow policy, and replaces the pool atomically only when the complete topology is trusted."
+      ]
+    },
+    {
+      "id": "OPENSEARCH-DEC-005",
+      "authoritative_sources": [
+        "opensearch-go-source"
+      ],
+      "executable_evidence": [
+        "TestInfoRejectsMalformedAndOversizedResponsesWithoutLeakingBodies",
+        "TestBulkRejectsEncodedBodyAboveConfiguredByteLimit",
+        "TestConfigurationCollectionsAndConcurrencyAreAbsolutelyBounded"
+      ],
+      "fixtures": [],
+      "fuzz": [],
+      "interoperability_evidence": [],
+      "interoperability_classification": "not assessed",
+      "differential_evidence": [],
+      "differential_classification": "not assessed",
+      "public_behavior": [
+        "Security, resource, compatibility, and wire consequences are included in the selected behavior below. Every response is read under an exact finite limit, closed on all paths, and structurally validated. Request collections, encoded bulk bodies, and configuration values are bounded. Public failures expose stable classifications and bounded metadata, never backend bodies."
+      ]
+    },
+    {
+      "id": "OPENSEARCH-DEC-006",
+      "authoritative_sources": [
+        "opensearch-3-search-api"
+      ],
+      "executable_evidence": [
+        "TestSearchEncodingWireContract",
+        "TestSearchUsesPITSearchAfterAndSignedQueryBoundCursor",
+        "TestSearchTranslatesTypedCapabilitiesWithoutCrossIndexLeakage",
+        "TestRealOpenSearchConformanceGeneratedDSLDifferential"
+      ],
+      "fixtures": [],
+      "fuzz": [
+        "FuzzSearchResponseBoundary"
+      ],
+      "interoperability_evidence": [
+        "adapters/opensearch/scripts/test-version-matrix.sh"
+      ],
+      "interoperability_classification": "provider agreement",
+      "differential_evidence": [
+        "adapters/opensearch/integration_test.go"
+      ],
+      "differential_classification": "maintained peer agreement",
+      "public_behavior": [
+        "Search authorization precedes resolution; typed queries use deterministic package-owned JSON; raw extensions are explicit, bounded, and opensearch-bound; offset traversal is shallow, while PIT cursors bind tenant, query, projection, index fingerprint, totals, expiry, and cleanup ownership."
+      ]
+    },
+    {
+      "id": "OPENSEARCH-DEC-007",
+      "authoritative_sources": [
+        "opensearch-3-search-api"
+      ],
+      "executable_evidence": [
+        "TestSearchTranslatesTypedCapabilitiesWithoutCrossIndexLeakage",
+        "TestAddAliasCreatesAnAuthorizedReadWriteBoundary",
+        "TestLifecycleRequiresAuthorizationBeforeNetworkAccess"
+      ],
+      "fixtures": [],
+      "fuzz": [],
+      "interoperability_evidence": [],
+      "interoperability_classification": "not assessed",
+      "differential_evidence": [],
+      "differential_classification": "not assessed",
+      "public_behavior": [
+        "Security, resource, compatibility, and wire consequences are included in the selected behavior below. Every search or write resolves tenant, logical index, and access mode through IndexResolver; returned names and mapping fingerprints are bounded and validated before network I/O. Read and write aliases remain distinct policy decisions."
+      ]
+    },
+    {
+      "id": "OPENSEARCH-DEC-008",
+      "authoritative_sources": [
+        "opensearch-3-search-api"
+      ],
+      "executable_evidence": [
+        "TestSearchEncodingWireContract",
+        "TestEncodeBoolPreservesZeroMinimumShouldMatchSemantics",
+        "TestSearchRejectsInvalidAnalyzerBeforeNetworkExecution"
+      ],
+      "fixtures": [],
+      "fuzz": [],
+      "interoperability_evidence": [],
+      "interoperability_classification": "not assessed",
+      "differential_evidence": [],
+      "differential_classification": "not assessed",
+      "public_behavior": [
+        "Security, resource, compatibility, and wire consequences are included in the selected behavior below. Typed values map to deterministic package-owned JSON shapes, including explicit zero-valued boolean settings. Locale analyzers come only from a bounded allowlist. Applications retain ownership of mappings, analyzers, ranking, and relevance fixtures."
+      ]
+    },
+    {
+      "id": "OPENSEARCH-DEC-009",
+      "authoritative_sources": [
+        "opensearch-3-search-api"
+      ],
+      "executable_evidence": [
+        "TestSearchUsesPITSearchAfterAndSignedQueryBoundCursor",
+        "TestCursorSearchRejectsPartialPagesAndClosesOwnedPIT",
+        "TestSearchPreservesPrimaryAndPITCleanupFailures"
+      ],
+      "fixtures": [],
+      "fuzz": [],
+      "interoperability_evidence": [],
+      "interoperability_classification": "not assessed",
+      "differential_evidence": [],
+      "differential_classification": "not assessed",
+      "public_behavior": [
+        "Security, resource, compatibility, and wire consequences are included in the selected behavior below. Offset pagination is shallow and bounded. Cursor pagination requires stable sort ending in _id, binds a signed cursor to tenant, query, index fingerprint, PIT, totals, and absolute expiry, and transfers PIT ownership only with a valid continuation. Every terminal or failed owned path closes the PIT and exposes cleanup failure."
+      ]
+    },
+    {
+      "id": "OPENSEARCH-DEC-010",
+      "authoritative_sources": [
+        "opensearch-3-search-api"
+      ],
+      "executable_evidence": [
+        "TestSearchRejectsMoreHitsThanRequested",
+        "TestSearchCursorStateAndResponseBoundaries",
+        "TestPITProjectionAndSearchResponsePredicatesAreIndependent"
+      ],
+      "fixtures": [],
+      "fuzz": [],
+      "interoperability_evidence": [],
+      "interoperability_classification": "not assessed",
+      "differential_evidence": [],
+      "differential_classification": "not assessed",
+      "public_behavior": [
+        "Security, resource, compatibility, and wire consequences are included in the selected behavior below. Responses must fit all declared limits and internal invariants. Cursor traversal rejects partial shard results and excessive hits, validates sort/PIT state before issuing a continuation, and preserves bounded operational diagnostics."
+      ]
+    },
+    {
+      "id": "OPENSEARCH-DEC-011",
+      "authoritative_sources": [
+        "opensearch-3-bulk-api"
+      ],
+      "executable_evidence": [
+        "TestWriteUsesExternalVersioningForSupportedDocumentActions",
+        "TestBulkReturnsPerItemUnknownOutcomesWhenTransportOutcomeIsAmbiguous",
+        "TestBulkRejectsMisattributedResponseActions",
+        "TestWritesFailClosedWithoutDurableGuard"
+      ],
+      "fixtures": [],
+      "fuzz": [
+        "FuzzBulkResponseBoundary"
+      ],
+      "interoperability_evidence": [
+        "adapters/opensearch/scripts/test-version-matrix.sh"
+      ],
+      "interoperability_classification": "provider agreement",
+      "differential_evidence": [],
+      "differential_classification": "not assessed",
+      "public_behavior": [
+        "Writes require a durable application guard and external versions; update-existing is unsupported; bulk results are positionally and structurally attributed, safe outcomes are classified per item, and ambiguous transport or malformed acknowledgements remain unknown without retry."
+      ]
+    },
+    {
+      "id": "OPENSEARCH-DEC-012",
+      "authoritative_sources": [
+        "opensearch-3-bulk-api"
+      ],
+      "executable_evidence": [
+        "TestBulkEncodesExternalVersionsAndPreservesPartialOutcomes",
+        "TestBulkRejectsMisattributedResponseActions",
+        "TestBulkWireContractAndResponseBoundaries"
+      ],
+      "fixtures": [],
+      "fuzz": [],
+      "interoperability_evidence": [],
+      "interoperability_classification": "not assessed",
+      "differential_evidence": [],
+      "differential_classification": "not assessed",
+      "public_behavior": [
+        "Security, resource, compatibility, and wire consequences are included in the selected behavior below. Final NDJSON bytes and item count are bounded. Every result must match action, ID, position, status, and version invariants. Partial failures remain per-item; ambiguous transport or malformed response produces attributed unknown outcomes rather than unsafe automatic retry."
+      ]
+    },
+    {
+      "id": "OPENSEARCH-DEC-013",
+      "authoritative_sources": [
+        "opensearch-3-reindex-api"
+      ],
+      "executable_evidence": [
+        "TestLifecycleImplementsCreateResumableReindexVerifyCutoverAndCleanup",
+        "TestVerifyIndexRequiresSemanticVerifierAfterCountPreflight",
+        "TestCleanupIndexHoldsEligibilityGuardAcrossDeletion",
+        "TestRealOpenSearchSnapshotRestore"
+      ],
+      "fixtures": [],
+      "fuzz": [
+        "FuzzLifecycleResponseBoundary"
+      ],
+      "interoperability_evidence": [
+        "adapters/opensearch/scripts/test-version-matrix.sh"
+      ],
+      "interoperability_classification": "provider agreement",
+      "differential_evidence": [],
+      "differential_classification": "not assessed",
+      "public_behavior": [
+        "Lifecycle operations are separately authorized; reindex cursors are encrypted, expiring, and migration-bound; semantic verification gates fenced alias cutover; creation, alias mutation, cutover, and cleanup share durable exclusion; snapshot configuration and restore remain deployment-owned evidence."
+      ]
+    },
+    {
+      "id": "OPENSEARCH-DEC-014",
+      "authoritative_sources": [
+        "opensearch-3-reindex-api"
+      ],
+      "executable_evidence": [
+        "TestIndexTemplatesUseAuthorizedComposableTemplateAPI",
+        "TestSearchUsesPITSearchAfterAndSignedQueryBoundCursor",
+        "TestAddAliasCreatesAnAuthorizedReadWriteBoundary"
+      ],
+      "fixtures": [],
+      "fuzz": [],
+      "interoperability_evidence": [],
+      "interoperability_classification": "not assessed",
+      "differential_evidence": [],
+      "differential_classification": "not assessed",
+      "public_behavior": [
+        "Security, resource, compatibility, and wire consequences are included in the selected behavior below. Applications own canonical definitions and ranking. The adapter validates bounded structures and authorized template operations. A stable definition fingerprint accompanies each resolved index and binds cursors to one generation; changed mappings invalidate traversal."
+      ]
+    },
+    {
+      "id": "OPENSEARCH-DEC-015",
+      "authoritative_sources": [
+        "opensearch-2-health-api"
+      ],
+      "executable_evidence": [
+        "TestHealthAndCapacityPreserveOperationalSignals",
+        "TestFailureDiagnosticAndClassificationContract",
+        "TestTelemetryEmitsBoundedOperationOutcomesAndContainsObserverPanics",
+        "TestRealOpenSearchConformanceLiveFaults"
+      ],
+      "fixtures": [],
+      "fuzz": [
+        "FuzzInfoResponseBoundary"
+      ],
+      "interoperability_evidence": [
+        "adapters/opensearch/scripts/test-version-matrix.sh"
+      ],
+      "interoperability_classification": "provider agreement",
+      "differential_evidence": [
+        "adapters/opensearch/fault_integration_test.go"
+      ],
+      "differential_classification": "maintained peer agreement",
+      "public_behavior": [
+        "Readiness requires complete bounded health and capacity signals; failures and telemetry expose stable classifications without backend bodies or private causes; mutable release authorities are digest-monitored, and any source or observable decision change is release-blocking until reviewed, recorded, and exercised."
+      ]
+    },
+    {
+      "id": "OPENSEARCH-DEC-016",
+      "authoritative_sources": [
+        "opensearch-2-health-api"
+      ],
+      "executable_evidence": [
+        "TestFailureDiagnosticAndClassificationContract",
+        "TestInfoClassifiesMalformedErrorBodiesWithoutEchoingThem",
+        "TestTelemetryEmitsBoundedOperationOutcomesAndContainsObserverPanics"
+      ],
+      "fixtures": [],
+      "fuzz": [],
+      "interoperability_evidence": [],
+      "interoperability_classification": "not assessed",
+      "differential_evidence": [],
+      "differential_classification": "not assessed",
+      "public_behavior": [
+        "Security, resource, compatibility, and wire consequences are included in the selected behavior below. Public failures preserve stable operation, class, status, and outcome identity while excluding backend bodies and signer/provider details. Telemetry uses bounded attributes, contains observer panics, and does not record queries, sources, credentials, cursors, tenant labels, or physical index names."
+      ]
+    },
+    {
+      "id": "OPENSEARCH-DEC-017",
+      "authoritative_sources": [
+        "opensearch-go-source"
+      ],
+      "executable_evidence": [
+        "TestAdmissionRejectsExcessWorkWithoutReachingTransport",
+        "TestCircuitBreakerStopsOverloadAmplificationUntilCooldown",
+        "TestOwnedTransportIsUsedAndClosedExactlyOnce",
+        "TestBorrowedTransportRemainsCallerOwned"
+      ],
+      "fixtures": [],
+      "fuzz": [],
+      "interoperability_evidence": [],
+      "interoperability_classification": "not assessed",
+      "differential_evidence": [],
+      "differential_classification": "not assessed",
+      "public_behavior": [
+        "Security, resource, compatibility, and wire consequences are included in the selected behavior below. Admission and queue waits are finite, circuit state prevents overload amplification, cancellation releases capacity, and all state is instance-local. Close is idempotent and closes idle resources only when ownership was transferred; borrowed transports remain caller-owned."
+      ]
+    },
+    {
+      "id": "OPENSEARCH-DEC-018",
+      "authoritative_sources": [
+        "opensearch-2-health-api"
+      ],
+      "executable_evidence": [
+        "TestRealOpenSearchConformance",
+        "TestSupportedOpenSearchVersionsIncludesCurrentRelease",
+        "TestContentTypeOwnershipAndWriteStatusBoundaries"
+      ],
+      "fixtures": [],
+      "fuzz": [],
+      "interoperability_evidence": [],
+      "interoperability_classification": "not assessed",
+      "differential_evidence": [],
+      "differential_classification": "not assessed",
+      "public_behavior": [
+        "Security, resource, compatibility, and wire consequences are included in the selected behavior below. REST paths, parameters, JSON shapes, result classifications, retry ownership, cursor binding, external versions, and lifecycle transitions are compatibility surfaces. Any source pin change requires real-server conformance, upgrade, security, benchmark, API, docs, and changelog review before the supported matrix changes."
+      ]
+    },
+    {
+      "id": "OPENSEARCH-DEC-019",
+      "authoritative_sources": [
+        "opensearch-3-search-api"
+      ],
+      "executable_evidence": [
+        "TestSearchFailsClosedBeforeResolutionWithoutAuthorization",
+        "TestSearchAuthorizationReceivesExactRawQueryAndSourceScope",
+        "TestSearchAuthorizationReceivesBoundedPaginationIntent"
+      ],
+      "fixtures": [],
+      "fuzz": [],
+      "interoperability_evidence": [],
+      "interoperability_classification": "not assessed",
+      "differential_evidence": [],
+      "differential_classification": "not assessed",
+      "public_behavior": [
+        "Security, resource, compatibility, and wire consequences are included in the selected behavior below. Every search requires SearchAuthorizer approval before resolver or transport access. The policy receives a caller-owned copy of the complete query and result-disclosure scope, including full-source and bounded pagination cost intent, without opaque cursor bytes. Denials collapse to ErrSearchDenied and raw extensions are unavailable when no authorizer is configured."
+      ]
+    },
+    {
+      "id": "OPENSEARCH-DEC-020",
+      "authoritative_sources": [
+        "opensearch-3-reindex-api"
+      ],
+      "executable_evidence": [
+        "TestReindexCursorIsEncryptedBoundAndExpiring",
+        "TestReindexFailsBeforeDispatchWithoutCursorCodec",
+        "TestReindexCursorCodecRejectsUnboundedConfigurationAndClock"
+      ],
+      "fixtures": [],
+      "fuzz": [],
+      "interoperability_evidence": [],
+      "interoperability_classification": "not assessed",
+      "differential_evidence": [],
+      "differential_classification": "not assessed",
+      "public_behavior": [
+        "Security, resource, compatibility, and wire consequences are included in the selected behavior below. Reindex continuation is a separate bounded AES-256-GCM cursor binding task ID, tenant, physical source, physical target, and bounded expiry without disclosing those values to the token holder. Tampering, unsafe task syntax, cross-binding reuse, expiry, and over-limit tokens fail before polling. Every successful incomplete poll reseals the same task binding with a fresh bounded lease, and callers must replace their durable cursor checkpoint. It does not share search-cursor keys or semantics."
+      ]
+    },
+    {
+      "id": "OPENSEARCH-DEC-021",
+      "authoritative_sources": [
+        "opensearch-3-reindex-api"
+      ],
+      "executable_evidence": [
+        "TestVerifyIndexRequiresSemanticVerifierAfterCountPreflight",
+        "TestVerifyIndexUsesSemanticDriftWhenCountsAreEqual",
+        "TestVerifyIndexRejectsInvalidOrFailedSemanticVerification",
+        "TestCutoverAliasHoldsApplicationFenceAcrossFinalVerificationAndSwap",
+        "TestRealLifecycleVerifierUsesOnePointInTimeForBothGenerations"
+      ],
+      "fixtures": [],
+      "fuzz": [],
+      "interoperability_evidence": [],
+      "interoperability_classification": "not assessed",
+      "differential_evidence": [],
+      "differential_classification": "not assessed",
+      "public_behavior": [
+        "Security, resource, compatibility, and wire consequences are included in the selected behavior below. VerifyIndex performs count preflight and then requires a LifecycleVerifier to compare the complete bounded ID, external version, and canonical source-digest set from a stable point-in-time view and independently attest the live target definition fingerprint. Drift, missing attestation, impossible counts, or verifier failure prevents a verified report. CutoverAlias requires an application-owned LifecycleCutoverGuard that synchronously quiesces writes and retains that fence across a fresh complete verification and atomic alias mutation. Raw SwapAlias remains an explicitly unverified low-level primitive for bootstrap or already externally fenced recovery."
+      ]
+    },
+    {
+      "id": "OPENSEARCH-DEC-022",
+      "authoritative_sources": [
+        "opensearch-3-reindex-api"
+      ],
+      "executable_evidence": [
+        "TestRealOpenSearchSnapshotRestore",
+        "TestRealOpenSearchConformanceRebuildReconciliationRollbackAndConcurrentApplications"
+      ],
+      "fixtures": [],
+      "fuzz": [],
+      "interoperability_evidence": [],
+      "interoperability_classification": "not assessed",
+      "differential_evidence": [],
+      "differential_classification": "not assessed",
+      "public_behavior": [
+        "Security, resource, compatibility, and wire consequences are included in the selected behavior below. Snapshot repository creation and restore remain deployment-owned, not public adapter APIs. The real-server matrix exercises an isolated filesystem repository and verifies that restored documents retain IDs, sources, and external versions. Source-of-truth rebuild remains a separate required recovery path."
+      ]
+    },
+    {
+      "id": "OPENSEARCH-DEC-023",
+      "authoritative_sources": [
+        "opensearch-3-reindex-api"
+      ],
+      "executable_evidence": [
+        "TestAliasMutationCannotBypassActiveCleanupExclusion",
+        "TestSharedMutationGuardSerializesAliasMutationAfterCleanup",
+        "TestRealOpenSearchConformancePersistsAndResumesMigratorLifecycle"
+      ],
+      "fixtures": [],
+      "fuzz": [],
+      "interoperability_evidence": [],
+      "interoperability_classification": "not assessed",
+      "differential_evidence": [],
+      "differential_classification": "not assessed",
+      "public_behavior": [
+        "CreateIndex, AddAlias, SwapAlias, CutoverAlias, and CleanupIndex require an application-owned LifecycleMutationGuard. It receives the tenant, operation, and complete resource set, invokes the mutation synchronously exactly once, and must hold cross-instance exclusion until the callback returns. Cleanup nests its final LifecycleCleanupGuard checks and deletion inside the same exclusion. Missing, repeated, asynchronous, or contradictory callbacks fail with a stable typed error and do not expose coordinator details. Security consequences: lifecycle authorization and exact resource validation still run before the durable exclusion, and guard failures expose no tenant, resource, lock, or coordinator details. Compatibility consequences: every application instance that enables lifecycle mutation must configure the same durable guard contract; process-local guards and mixed guarded/unguarded deployments are unsupported. Wire consequences: REST request and response shapes remain unchanged, but alias inspection and deletion execute inside one serialized callback and no hidden retry or extra mutation is introduced."
+      ]
+    }
+  ]
+}

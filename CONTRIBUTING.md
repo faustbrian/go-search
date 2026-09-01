@@ -23,6 +23,8 @@ Specification-backed changes must follow the
 the affected stable decision entries, and complete the Specification Decisions
 section of the pull request template. An unresolved interpretation or stale
 source pin is release-blocking; peer behavior cannot silently select policy.
+OpenSearch adapter changes must also update its
+[decision register](adapters/opensearch/docs/specification-decisions.md).
 
 Required mutation gates must finish with zero surviving viable mutants.
 
