@@ -6,14 +6,12 @@ All notable changes to this module are documented here.
 
 ### Changed
 
-- Adopt the released `go-library-tools` v1.0.5 repository contract and
-  immutable reusable CI workflow without changing runtime behavior or public
-  APIs.
-- Store package-owned mutation bootstrap and ledger evidence under
-  `.verification` so it remains available to the shared verification runner.
-
 - Align isolated checks and integration fixtures with standalone package
   module paths.
+
+- Adopt the released `go-library-tools` v1.2.0 specification-governance
+  contract while retaining the package's OpenSearch compatibility, lifecycle,
+  recovery, and security matrices.
 
 ### Documentation
 

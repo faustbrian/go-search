@@ -1,11 +1,14 @@
 schema_version: 1
-tool_version: v1.0.14
-tool_checksums_sha256: 88341d2f2904925b22ec8de084fec68c5229669f1119f066ed5fccd76aee2f82
+tool_version: v1.2.0
+tool_checksums_sha256: 7de6de3a14184eced8c0114bf802cb24a808f3e1592d358f6f6f3d02552d0e27
+
 manifest:
   modules: modules.json
   packages: packages.json
+
 evidence:
   root: .verification
+
 mutation:
   root: .verification/mutation
   imports:
@@ -15,6 +18,7 @@ mutation:
     - module: adapters/opensearch
       archive: .verification/mutation/bootstrap/adapters-opensearch.zip
       ledger: .verification/mutation/migration-ledger.json
+
 api:
   baselines:
     - module: .
@@ -23,86 +27,109 @@ api:
     - module: adapters/opensearch
       mode: apidiff
       path: adapters/opensearch/api/baseline.txt
+
 operations:
   - module: .
+    gate: docs
+    steps:
+      - type: make
+        makefile: verification/package.mk
+        target: root-docs
+        timeout: 20m
+  - module: .
+    gate: test
+    steps:
+      - type: make
+        makefile: verification/package.mk
+        target: root-contract
+        timeout: 20m
+  - module: .
     gate: fuzz
     steps:
       - type: go-test
-        packages: ["."]
+        packages: [.]
         fuzz: '^FuzzDocumentSource$'
-        budget: 10000x
+        budget: 10s
         timeout: 2m
       - type: go-test
-        packages: ["."]
+        packages: [.]
         fuzz: '^FuzzIndexDefinitionJSON$'
-        budget: 10000x
+        budget: 10s
         timeout: 2m
       - type: go-test
-        packages: ["."]
+        packages: [.]
         fuzz: '^FuzzCursorDecode$'
-        budget: 10000x
+        budget: 10s
         timeout: 2m
       - type: go-test
-        packages: ["."]
+        packages: [.]
         fuzz: '^FuzzRequestValidateAndFingerprint$'
-        budget: 10000x
+        budget: 10s
         timeout: 2m
   - module: .
     gate: benchmark
     steps:
       - type: go-test
-        packages: [".", "./searchtest"]
-        benchmark: "."
+        packages: [., ./searchtest]
+        benchmark: .
         budget: 100ms
-        timeout: 20m
-  - module: adapters/opensearch
-    gate: fuzz
-    steps:
-      - type: go-test
-        packages: ["."]
-        fuzz: '^FuzzInfoResponseBoundary$'
-        budget: 10000x
-        timeout: 2m
-      - type: go-test
-        packages: ["."]
-        fuzz: '^FuzzSearchResponseBoundary$'
-        budget: 10000x
-        timeout: 2m
-      - type: go-test
-        packages: ["."]
-        fuzz: '^FuzzBulkResponseBoundary$'
-        budget: 10000x
-        timeout: 2m
-      - type: go-test
-        packages: ["."]
-        fuzz: '^FuzzLifecycleResponseBoundary$'
-        budget: 10000x
-        timeout: 2m
-  - module: adapters/opensearch
-    gate: benchmark
-    steps:
-      - type: make
-        makefile: Makefile
-        target: benchmark
-        timeout: 20m
-  - module: adapters/opensearch
-    gate: conformance
-    steps:
-      - type: make
-        makefile: Makefile
-        target: conformance
-        timeout: 20m
-  - module: adapters/opensearch
-    gate: interoperability
-    steps:
-      - type: make
-        makefile: Makefile
-        target: interoperability
         timeout: 20m
   - module: adapters/opensearch
     gate: docs
     steps:
       - type: make
-        makefile: Makefile
-        target: docs
+        makefile: verification/package.mk
+        target: opensearch-docs
         timeout: 20m
+  - module: adapters/opensearch
+    gate: test
+    steps:
+      - type: make
+        makefile: verification/package.mk
+        target: opensearch-contract
+        timeout: 20m
+  - module: adapters/opensearch
+    gate: fuzz
+    steps:
+      - type: go-test
+        packages: [.]
+        fuzz: '^FuzzInfoResponseBoundary$'
+        budget: 10s
+        timeout: 2m
+      - type: go-test
+        packages: [.]
+        fuzz: '^FuzzSearchResponseBoundary$'
+        budget: 10s
+        timeout: 2m
+      - type: go-test
+        packages: [.]
+        fuzz: '^FuzzBulkResponseBoundary$'
+        budget: 10s
+        timeout: 2m
+      - type: go-test
+        packages: [.]
+        fuzz: '^FuzzLifecycleResponseBoundary$'
+        budget: 10s
+        timeout: 2m
+  - module: adapters/opensearch
+    gate: benchmark
+    steps:
+      - type: go-test
+        packages: [.]
+        benchmark: .
+        budget: 100ms
+        timeout: 20m
+  - module: adapters/opensearch
+    gate: conformance
+    steps:
+      - type: make
+        makefile: verification/package.mk
+        target: opensearch-conformance
+        timeout: 120m
+  - module: adapters/opensearch
+    gate: interoperability
+    steps:
+      - type: make
+        makefile: verification/package.mk
+        target: opensearch-interoperability
+        timeout: 120m
