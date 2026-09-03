@@ -85,6 +85,11 @@ security, pagination, migration/rebuild, observability, upgrades, backups, and
 compatibility. Observable REST and adapter policy choices are recorded in the
 [specification decision register](docs/specification-decisions.md).
 
+For shared package families, selection guidance, ownership, and lifecycle
+vocabulary, see the versioned [v1.3.0 Golib ecosystem
+index](https://github.com/faustbrian/go-library-tools/blob/v1.3.0/docs/ecosystem/README.md)
+and its [Integration and data movement family](https://github.com/faustbrian/go-library-tools/blob/v1.3.0/docs/ecosystem/design-language.md#package-families-and-selection).
+
 ## Integration tests
 
 Real-backend tests require an explicitly supplied disposable OpenSearch URL and

@@ -1,6 +1,6 @@
 schema_version: 1
-tool_version: v1.2.0
-tool_checksums_sha256: 7de6de3a14184eced8c0114bf802cb24a808f3e1592d358f6f6f3d02552d0e27
+tool_version: v1.3.0
+tool_checksums_sha256: 72d38d7d0cab33bfeb9345df6b141eacf9841c5d6817f597ff25b957dc8dc48f
 
 manifest:
   modules: modules.json
@@ -78,15 +78,15 @@ operations:
     gate: docs
     steps:
       - type: make
-        makefile: verification/package.mk
-        target: opensearch-docs
+        makefile: Makefile
+        target: docs
         timeout: 20m
   - module: adapters/opensearch
     gate: test
     steps:
       - type: make
-        makefile: verification/package.mk
-        target: opensearch-contract
+        makefile: Makefile
+        target: contract
         timeout: 20m
   - module: adapters/opensearch
     gate: fuzz
@@ -123,13 +123,13 @@ operations:
     gate: conformance
     steps:
       - type: make
-        makefile: verification/package.mk
-        target: opensearch-conformance
+        makefile: Makefile
+        target: conformance
         timeout: 120m
   - module: adapters/opensearch
     gate: interoperability
     steps:
       - type: make
-        makefile: verification/package.mk
-        target: opensearch-interoperability
+        makefile: Makefile
+        target: interoperability
         timeout: 120m

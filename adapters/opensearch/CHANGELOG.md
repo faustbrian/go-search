@@ -2,7 +2,18 @@
 
 ## Unreleased
 
+### Changed
+
+- Adopt the `go-library-tools` v1.3.0 schema-v2 cohesion contract and immutable
+  reusable CI workflow without changing adapter API or runtime behavior.
+- Keep package-owned verification executable from the nested module boundary
+  used by the shared repository gate.
+
 ### Documentation
+
+- Publish the adapter's family, selection, ownership, lifecycle, supported
+  OpenSearch matrix, and delivery metadata with versioned ecosystem
+  navigation.
 
 - Remove completed implementation plans and link to package-owned guidance.
 - Add machine-enforced OpenSearch decision, conformance, authority-monitoring,

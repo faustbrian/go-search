@@ -6,6 +6,10 @@ All notable changes to this module are documented here.
 
 ### Changed
 
+- Adopt the `go-library-tools` v1.3.0 schema-v2 cohesion contract, immutable
+  reusable CI workflow, and local `make cohesion` gate without changing the
+  search API or runtime behavior.
+
 - Align isolated checks and integration fixtures with standalone package
   module paths.
 
@@ -14,6 +18,9 @@ All notable changes to this module are documented here.
   recovery, and security matrices.
 
 ### Documentation
+
+- Publish the module's family, selection, ownership, lifecycle, support, and
+  delivery metadata with versioned ecosystem navigation.
 
 - Remove completed implementation plans and replace archived monorepo links
   with repository-local documentation.
