@@ -6,7 +6,7 @@ All notable changes to this module are documented here.
 
 ### Changed
 
-- Adopt the `go-library-tools` v1.3.0 schema-v2 cohesion contract, immutable
+- Adopt the `go-library-tools` v1.4.0 schema-v2 cohesion contract, immutable
   reusable CI workflow, and local `make cohesion` gate without changing the
   search API or runtime behavior.
 

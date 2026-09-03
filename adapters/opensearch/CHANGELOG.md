@@ -4,10 +4,14 @@
 
 ### Changed
 
-- Adopt the `go-library-tools` v1.3.0 schema-v2 cohesion contract and immutable
+- Adopt the `go-library-tools` v1.4.0 schema-v2 cohesion contract and immutable
   reusable CI workflow without changing adapter API or runtime behavior.
 - Keep package-owned verification executable from the nested module boundary
   used by the shared repository gate.
+- Record the reviewed `opensearch-go` v5.0.0-rc6 release-feed drift as
+  monitoring-only while retaining the exact v4.7.3 client, behavior, and
+  support boundary for OPENSEARCH-DEC-001 through OPENSEARCH-DEC-005 and
+  OPENSEARCH-DEC-017.
 
 ### Documentation
 

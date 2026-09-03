@@ -2500,6 +2500,7 @@ func TestRealLifecycleVerifierUsesOnePointInTimeForBothGenerations(t *testing.T)
 	if err != nil {
 		t.Fatal(err)
 	}
+	t.Cleanup(func() { _ = direct.Close() })
 	verifier := &realLifecycleVerifier{
 		client: direct, pageSize: 10, maximumRecords: 100, maximumResponseBytes: 4096,
 		expectedDefinitions: map[string]search.IndexDefinition{definition.Fingerprint(): definition},
@@ -2553,6 +2554,7 @@ func TestRealLifecycleVerifierCleansRotatedPointInTimeAfterScanFailure(t *testin
 	if err != nil {
 		t.Fatal(err)
 	}
+	t.Cleanup(func() { _ = direct.Close() })
 	verifier := &realLifecycleVerifier{
 		client: direct, pageSize: 10, maximumRecords: 100, maximumResponseBytes: 4096,
 		expectedDefinitions: map[string]search.IndexDefinition{definition.Fingerprint(): definition},
