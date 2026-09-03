@@ -15,6 +15,8 @@
 
 ### Documentation
 
+- Point the adapter README directly to the immutable v1.4.0 ecosystem index
+  and integration-and-data-movement family guidance.
 - Publish the adapter's family, selection, ownership, lifecycle, supported
   OpenSearch matrix, and delivery metadata with versioned ecosystem
   navigation.
