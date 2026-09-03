@@ -1,5 +1,5 @@
 {
-  "schema_version": 1,
+  "schema_version": 2,
   "repository": "github.com/faustbrian/go-search",
   "go_version": "1.26.6",
   "modules": [
@@ -58,6 +58,82 @@
       "goal_files": [],
       "goal_status": "not-applicable",
       "goal_evidence": [],
+      "cohesion": {
+        "family": "integration-and-data-movement",
+        "secondary_capabilities": [
+          "data-encoding",
+          "database-and-storage",
+          "protocols-and-schemas",
+          "testing-and-conformance"
+        ],
+        "responsibility": "Provide backend-neutral contracts for bounded document indexing, typed querying, cursor pagination, schema migration, projections, and reconciliation while treating application data as authoritative.",
+        "non_goals": [
+          "Own the application datastore, durable outbox, replay checkpoints, ranking policy, or backend deployment.",
+          "Select a search backend, retry engine failures, or make derived indexes authoritative application state."
+        ],
+        "public_package_identifier": "search",
+        "primary_entry_packages": [
+          "github.com/faustbrian/go-search"
+        ],
+        "package_selection": {
+          "github.com/faustbrian/go-search": "Use for backend-neutral document, query, cursor, result, projection, migration, and reconciliation contracts.",
+          "github.com/faustbrian/go-search/searchtest": "Use in tests for a deterministic bounded fake and reusable backend conformance checks."
+        },
+        "lifecycle_status": "active",
+        "maturity": "stable",
+        "construction_styles": [
+          "plain-function",
+          "validated-value"
+        ],
+        "lifecycle_styles": [
+          "run",
+          "stateless"
+        ],
+        "ownership": {
+          "configuration": "caller",
+          "mutable_inputs": [
+            "borrow",
+            "copy"
+          ],
+          "runtime_resources": "caller",
+          "background_work": "none"
+        },
+        "optional_owned_dependencies": [],
+        "adapters": [
+          "github.com/faustbrian/go-search/adapters/opensearch"
+        ],
+        "companions": [],
+        "supported_go": {
+          "minimum": "1.26.6",
+          "tested": [
+            "1.26.6"
+          ]
+        },
+        "supported_platforms": [
+          "portable-go"
+        ],
+        "supported_backends": [],
+        "supported_protocols": [],
+        "documentation": {
+          "readme": "README.md",
+          "api": "docs/api.md",
+          "adoption": "docs/adoption.md",
+          "security": "docs/security.md",
+          "compatibility": "docs/consistency.md",
+          "performance": "docs/operations.md",
+          "examples": "docs/adoption.md",
+          "faq": "docs/faq.md",
+          "changelog": "CHANGELOG.md",
+          "pkg_go_dev": "https://pkg.go.dev/github.com/faustbrian/go-search",
+          "ecosystem_index": "https://github.com/faustbrian/go-library-tools/blob/v1.3.0/docs/ecosystem/README.md"
+        },
+        "known_good_compatibility_sets": [],
+        "delivery": {
+          "implementation": "not-started",
+          "hardening": "not-started",
+          "release": "not-started"
+        }
+      },
       "gates": {
         "api_compatibility": true,
         "benchmarks": true,
@@ -135,6 +211,88 @@
       "goal_files": [],
       "goal_status": "not-applicable",
       "goal_evidence": [],
+      "cohesion": {
+        "family": "integration-and-data-movement",
+        "secondary_capabilities": [
+          "administration-and-control",
+          "configuration",
+          "database-and-storage",
+          "identity-and-access",
+          "observability",
+          "resilience-and-admission",
+          "transport-and-networking"
+        ],
+        "responsibility": "Translate the backend-neutral search contract to a bounded OpenSearch client with explicit transport, trust, lifecycle, resilience, and observability policy.",
+        "non_goals": [
+          "Own application documents, source-of-truth storage, authorization policy, durable replay checkpoints, or deployment-managed backups.",
+          "Provide implicit retries, environment-derived transport policy, unrestricted backend DSL, or compatibility beyond the tested OpenSearch matrix."
+        ],
+        "public_package_identifier": "opensearch",
+        "primary_entry_packages": [
+          "github.com/faustbrian/go-search/adapters/opensearch"
+        ],
+        "package_selection": {
+          "github.com/faustbrian/go-search/adapters/opensearch": "Use when the backend-neutral search contract must target the exact supported OpenSearch server and client matrix."
+        },
+        "lifecycle_status": "active",
+        "maturity": "stable",
+        "construction_styles": [
+          "new-config",
+          "validated-value"
+        ],
+        "lifecycle_styles": [
+          "close"
+        ],
+        "ownership": {
+          "configuration": "caller",
+          "mutable_inputs": [
+            "borrow",
+            "copy",
+            "transfer"
+          ],
+          "runtime_resources": "shared",
+          "background_work": "none"
+        },
+        "optional_owned_dependencies": [],
+        "adapters": [],
+        "companions": [],
+        "supported_go": {
+          "minimum": "1.26.6",
+          "tested": [
+            "1.26.6"
+          ]
+        },
+        "supported_platforms": [
+          "portable-go"
+        ],
+        "supported_backends": [
+          "opensearch"
+        ],
+        "supported_protocols": [
+          "http",
+          "json",
+          "opensearch-rest-api"
+        ],
+        "documentation": {
+          "readme": "adapters/opensearch/README.md",
+          "api": "adapters/opensearch/docs/api-inventory.md",
+          "adoption": "adapters/opensearch/docs/README.md",
+          "security": "adapters/opensearch/docs/security.md",
+          "compatibility": "adapters/opensearch/docs/compatibility.md",
+          "performance": "adapters/opensearch/docs/observability.md",
+          "examples": "adapters/opensearch/README.md",
+          "faq": "adapters/opensearch/docs/troubleshooting.md",
+          "changelog": "adapters/opensearch/CHANGELOG.md",
+          "pkg_go_dev": "https://pkg.go.dev/github.com/faustbrian/go-search/adapters/opensearch",
+          "ecosystem_index": "https://github.com/faustbrian/go-library-tools/blob/v1.3.0/docs/ecosystem/README.md"
+        },
+        "known_good_compatibility_sets": [],
+        "delivery": {
+          "implementation": "not-started",
+          "hardening": "not-started",
+          "release": "not-started"
+        }
+      },
       "gates": {
         "api_compatibility": true,
         "benchmarks": true,

@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "reviewed_at": "2026-08-30",
+  "reviewed_at": "2026-09-03",
   "review_interval_days": 30,
   "authorities": [
     {"id":"opensearch-2-health-api","kind":"specification","version":"2.19.6","url":"https://raw.githubusercontent.com/opensearch-project/OpenSearch/97d3c13bf22a4a72ac11dc503fe44c97662b9161/rest-api-spec/src/main/resources/rest-api-spec/api/cluster.health.json","sha256":"393c0ab2e3a7015b93925533bc5d73d54f917dcbfdbfa805bb3e8282ee9e79a1","specifications":["OpenSearch REST API 2.19.6"]},
@@ -9,6 +9,6 @@
     {"id":"opensearch-3-reindex-api","kind":"specification","version":"3.8.0","url":"https://raw.githubusercontent.com/opensearch-project/OpenSearch/e5a3c5691be87af6c12dbe3e158c59c04ee72973/rest-api-spec/src/main/resources/rest-api-spec/api/reindex.json","sha256":"0ed5b28d165aab45bf32911dd9054f1ce9d202dde2eda62b69b172b79a5391b5","specifications":["OpenSearch REST API 3.8.0"]},
     {"id":"opensearch-releases","kind":"releases","url":"https://github.com/opensearch-project/OpenSearch/releases.atom","sha256":"52e11ca6cb1f578e867c7c295240143433d3905e97c4d0214e6de059ef588450","specifications":["OpenSearch REST API 2.19.6","OpenSearch REST API 3.8.0"]},
     {"id":"opensearch-go-source","kind":"specification","version":"4.7.3","url":"https://raw.githubusercontent.com/opensearch-project/opensearch-go/172ea95af6dfe30b612cc42ac736e7dd613154d9/opensearch.go","sha256":"fb357f48b26dd12a2f8ade8aec97deb6cd98447b5ad5ac444bf721a7abdade10","specifications":["OpenSearch Go client 4.7.3"]},
-    {"id":"opensearch-go-releases","kind":"releases","url":"https://github.com/opensearch-project/opensearch-go/releases.atom","sha256":"c1e0b394941470fb248ca9e2b9372a6b47d5cb1b5d18f3481c14d52df3bc0973","specifications":["OpenSearch Go client 4.7.3"]}
+    {"id":"opensearch-go-releases","kind":"releases","url":"https://github.com/opensearch-project/opensearch-go/releases.atom","sha256":"05161c416000b1c3ed410132f93377143edba9f6905412759a04ce74557e9c44","specifications":["OpenSearch Go client 4.7.3"]}
   ]
 }

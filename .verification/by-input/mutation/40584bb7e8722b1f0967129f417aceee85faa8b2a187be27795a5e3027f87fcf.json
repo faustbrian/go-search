@@ -1,0 +1,19 @@
+{
+  "schema_version": 1,
+  "repository": "github.com/faustbrian/go-search",
+  "module": "adapters/opensearch",
+  "package": ".",
+  "gate": "mutation",
+  "input_digest": "sha256:40584bb7e8722b1f0967129f417aceee85faa8b2a187be27795a5e3027f87fcf",
+  "verifier_digest": "sha256:9a9499ff68a8dfd49a0be7995590297a8ee563a1aa226bfd8b9361dc53058108",
+  "result": "passed",
+  "report_digest": "sha256:b1337b32fcfabf45e99cf81a370975521d2b2d0f63ccf1577b6df96dfcba615b",
+  "environment": {
+    "CGO_ENABLED": "1",
+    "GOARCH": "arm64",
+    "GOOS": "darwin",
+    "GOVERSION": "go1.27.0",
+    "gremlins_binary_sha256": "sha256:6a2beddc477eb410f8a670b6c9049558563d3c4327498fe31604d31c773a959e"
+  },
+  "completed_at": "2026-09-03T07:52:09.521886Z"
+}

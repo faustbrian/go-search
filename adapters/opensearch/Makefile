@@ -6,10 +6,12 @@ INTEGRATION_WRITE_BENCH_TIME ?= 1x
 INTEGRATION_READ_BENCH_TIME ?= 20x
 INTEGRATION_BENCH_COUNT ?= 10
 
-.PHONY: benchmark-integration check clean-consumer conformance docs fault image-pins integration integration-matrix interoperability leak operations rolling-upgrade safety security-matrix soak soak-integration specification-sources stress
+.PHONY: benchmark-integration check clean-consumer conformance contract docs fault image-pins integration integration-matrix interoperability leak operations rolling-upgrade safety security-matrix soak soak-integration specification-sources stress
 
 check:
 	$(GOLIB) check --module adapters/opensearch
+
+contract: stress leak fault soak image-pins specification-sources operations clean-consumer safety
 
 benchmark-integration:
 	test -n "$${OPENSEARCH_URL:-}" -a -n "$${OPENSEARCH_EXPECTED_VERSION:-}"
@@ -51,7 +53,7 @@ rolling-upgrade: image-pins
 security-matrix: image-pins
 	./scripts/test-security-matrix.sh
 
-conformance: specification-sources integration-matrix
+conformance: specification-sources integration-matrix security-matrix
 
 interoperability: rolling-upgrade
 
