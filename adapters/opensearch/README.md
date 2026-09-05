@@ -5,7 +5,37 @@ This module is the first production adapter for
 OpenSearch API without making engine-specific ranking behavior part of the core
 contract.
 
-## Configure
+The adapter is stable at v1.0.0 and supports Go 1.26.6 on platforms where the
+Go HTTP client and the selected credential provider are supported. Its exact
+backend contract is OpenSearch 2.19.6 or 3.8.0 over HTTPS/JSON REST with
+`opensearch-go/v4` v4.7.3.
+
+## Install
+
+```sh
+go get github.com/faustbrian/go-search/adapters/opensearch@v1.0.0
+```
+
+Import it as `github.com/faustbrian/go-search/adapters/opensearch`. The core
+`github.com/faustbrian/go-search` module is an owned dependency; the adapter
+does not make OpenSearch mandatory for core consumers.
+
+## Five-minute start
+
+The checked [`ExampleClient_Search`](example_test.go) constructs a client with
+an explicit transport, resolver, authorizer, limits, timeout, and cursor codec,
+then performs a typed search. From a repository checkout, run it with:
+
+```sh
+go test -C adapters/opensearch -run '^ExampleClient_Search$'
+```
+
+Replace the example transport with a peer-verified deployment transport and
+application-owned policy before production use. The adapter never discovers
+credentials, endpoints, proxy policy, authorization, or tenancy from global
+configuration.
+
+## Production configuration outline
 
 ```go
 client, err := opensearch.New(opensearch.Config{
@@ -63,6 +93,14 @@ Authentication options are mutually exclusive, credentials are resolved for
 each request, implicit retries are disabled, response bodies are bounded, and
 borrowed transports remain caller-owned.
 
+`New(Config)` validates and copies mutable configuration before returning; it
+does not perform backend I/O or start background goroutines. The client is safe
+for concurrent use. Call `Close` to reject new work, close tracked point-in-time
+state, and release only adapter-owned transport resources. A borrowed
+`http.RoundTripper`, credential provider, signer, resolver, authorizers, guards,
+and observers remain caller-owned. All backend operations accept and obey the
+caller's context and the configured per-request timeout.
+
 ## Semantics
 
 - Cursor searches use point-in-time plus `search_after`; PIT cleanup failures
@@ -80,20 +118,54 @@ borrowed transports remain caller-owned.
   seam, and cleanup are separately authorized. `CutoverAlias` retains the
   application write fence across final verification and alias mutation.
 
+Use this adapter when the core search contract must target its exact tested
+OpenSearch matrix. Do not use it for Elasticsearch, arbitrary OpenSearch
+versions, unrestricted user DSL, application data ownership, automatic retry,
+or deployment-owned snapshots and backup orchestration.
+
+## Failure, security, and operations
+
+Adapter failures support `errors.Is` against stable sentinels and `errors.As`
+to `*opensearch.Failure` for operation, category, retryability, and known versus
+unknown outcome. A retryable classification does not authorize an automatic
+retry; applications own the total retry budget and must reconcile unknown
+writes. Backend bodies, credentials, endpoints, documents, queries, tenant
+labels, PIT identifiers, and cursor contents are redacted from public errors
+and telemetry.
+
+TLS verification is mandatory, proxying and discovery require explicit bounded
+policy, and search, write, and lifecycle authority are separate fail-closed
+application seams. Start with the [security guide](docs/security.md), then use
+the [deployment and shutdown checklist](docs/operations.md),
+[observability and capacity guidance](docs/observability.md), and
+[troubleshooting runbook](docs/troubleshooting.md). Compatibility, upgrades,
+and backup ownership are documented in [compatibility](docs/compatibility.md)
+and [upgrades](docs/upgrades.md).
+
 See the [documentation index](docs/README.md), including deployment, AWS,
 security, pagination, migration/rebuild, observability, upgrades, backups, and
 compatibility. Observable REST and adapter policy choices are recorded in the
 [specification decision register](docs/specification-decisions.md).
 
 For shared package families, selection guidance, ownership, and lifecycle
-vocabulary, see the versioned [v1.4.0 Golib ecosystem
-index](https://github.com/faustbrian/go-library-tools/blob/v1.4.0/docs/ecosystem/README.md)
-and its [Integration and data movement family](https://github.com/faustbrian/go-library-tools/blob/v1.4.0/docs/ecosystem/design-language.md#package-families-and-selection).
+vocabulary, see the versioned [v1.5.3 Golib ecosystem
+index](https://github.com/faustbrian/go-library-tools/blob/v1.5.3/docs/ecosystem/README.md)
+and its [Integration and data movement family](https://github.com/faustbrian/go-library-tools/blob/v1.5.3/docs/ecosystem/design-language.md#package-families-and-selection).
 
 ## Integration tests
 
 Real-backend tests require an explicitly supplied disposable OpenSearch URL and
-never use a running production service. See `make integration`.
+never use a running production service. Unit and checked-example tests require
+no backend. See [conformance](docs/conformance.md),
+[real-cluster testing](docs/real-cluster-testing.md), and
+[repository verification](../../CONTRIBUTING.md#verification).
+
+For API details, use [pkg.go.dev](https://pkg.go.dev/github.com/faustbrian/go-search/adapters/opensearch)
+and the [public API inventory](docs/api-inventory.md). For help, use the
+repository [support policy](../../SUPPORT.md); report vulnerabilities privately
+through [SECURITY.md](../../SECURITY.md). Release and migration impact is in the
+[adapter changelog](CHANGELOG.md) and repository
+[deprecation policy](../../DEPRECATION.md).
 
 ## License
 
