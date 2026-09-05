@@ -1,5 +1,11 @@
 # Security and authentication
 
+HTTPS with peer verification is the default endpoint policy. Plain HTTP
+requires `AllowInsecureHTTP`, is limited to `localhost` or an IP loopback
+address, and is rejected when basic credentials or an AWS signer is configured.
+Use that unauthenticated opt-in only for disposable local development and test
+services, never for a deployed endpoint.
+
 Basic credentials and AWS request signing are mutually exclusive. Credential
 providers are consulted for every request so rotation does not require client
 replacement. The adapter rejects credentials over plaintext HTTP, endpoint

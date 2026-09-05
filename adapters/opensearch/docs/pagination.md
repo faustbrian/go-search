@@ -21,6 +21,14 @@ adapter still owns the PIT triggers cleanup; final cleanup failures are returned
 instead of hidden. A lost or malformed cleanup acknowledgement is an unknown
 outcome and is not retried automatically. Abandoned cursors live until their
 configured OpenSearch keep-alive, so keep that duration short.
+PIT cleanup deliberately detaches from caller cancellation with
+`context.WithoutCancel`, retains context values, and receives a fresh
+adapter-level `RequestTimeout`. `Search` waits for that bounded deletion before
+returning and joins a cleanup failure with the primary result. This exception
+applies only to adapter-owned final cleanup. Credential-provider and signer
+callbacks needed for that delete receive the detached, freshly bounded cleanup
+context; search authorization and resolution callbacks use the original caller
+context.
 `MaximumOpenPointInTimes` bounds leases owned or adopted by one client process;
 `PointInTimeSnapshot` exposes only that process-local aggregate to operators.
 It excludes cursors owned by other instances and must not be exposed as

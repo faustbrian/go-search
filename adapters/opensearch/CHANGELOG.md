@@ -17,9 +17,8 @@
 
 - Complete the adapter entry contract with canonical installation, executable
   adoption, ownership, lifecycle, errors, security, exact platform/backend
-  compatibility, operations, testing, support, and v1.5.3 ecosystem navigation.
-- Point the adapter README directly to the immutable v1.4.0 ecosystem index
-  and integration-and-data-movement family guidance.
+  compatibility, bounded detached PIT cleanup, a dedicated FAQ, operations,
+  testing, support, and v1.5.3 ecosystem navigation.
 - Publish the adapter's family, selection, ownership, lifecycle, supported
   OpenSearch matrix, and delivery metadata with versioned ecosystem
   navigation.

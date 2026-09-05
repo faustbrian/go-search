@@ -16,6 +16,7 @@ versions, security, performance, testing, support, and ecosystem navigation.
 - [Capacity, dashboards, and alerts](observability.md)
 - [Validated dashboard, alert, drill, and runbook artifacts](../operations/)
 - [Upgrades and backup boundaries](upgrades.md)
+- [FAQ](faq.md)
 - [Troubleshooting](troubleshooting.md)
 - [API and compatibility inventory](api-inventory.md)
 - [Real-cluster testing](real-cluster-testing.md)

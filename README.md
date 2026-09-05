@@ -35,6 +35,8 @@ need OpenSearch install its [independently versioned adapter](adapters/opensearc
 
 ## Quick start
 
+This program is also maintained as the checked [`Example`](example_test.go).
+
 ```go
 package main
 

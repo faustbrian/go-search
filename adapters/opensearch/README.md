@@ -94,12 +94,17 @@ each request, implicit retries are disabled, response bodies are bounded, and
 borrowed transports remain caller-owned.
 
 `New(Config)` validates and copies mutable configuration before returning; it
-does not perform backend I/O or start background goroutines. The client is safe
-for concurrent use. Call `Close` to reject new work, close tracked point-in-time
-state, and release only adapter-owned transport resources. A borrowed
-`http.RoundTripper`, credential provider, signer, resolver, authorizers, guards,
-and observers remain caller-owned. All backend operations accept and obey the
-caller's context and the configured per-request timeout.
+does not perform backend I/O or start package-owned background workers. The
+client is safe for concurrent use. Call `Close` to reject new work, close
+tracked point-in-time state, and release only adapter-owned transport resources.
+A borrowed `http.RoundTripper`, credential provider, signer, resolver,
+authorizers, guards, and observers remain caller-owned.
+
+Caller-initiated backend work observes the caller context and the configured
+`RequestTimeout`. When `Search` still owns a PIT, its final deletion deliberately
+uses `context.WithoutCancel` so caller cancellation cannot leak backend state.
+That cleanup receives a fresh `RequestTimeout`, is awaited before `Search`
+returns, and joins any cleanup failure into the returned error.
 
 ## Semantics
 
@@ -125,22 +130,28 @@ or deployment-owned snapshots and backup orchestration.
 
 ## Failure, security, and operations
 
-Adapter failures support `errors.Is` against stable sentinels and `errors.As`
-to `*opensearch.Failure` for operation, category, retryability, and known versus
-unknown outcome. A retryable classification does not authorize an automatic
-retry; applications own the total retry budget and must reconcile unknown
-writes. Backend bodies, credentials, endpoints, documents, queries, tenant
-labels, PIT identifiers, and cursor contents are redacted from public errors
-and telemetry.
+Use `errors.Is` against stable sentinels on every error path. Backend execution,
+cancellation, overload, and ambiguous mutation failures may additionally wrap
+`*opensearch.Failure`; use `errors.As` to read its operation, category,
+retryability, and known-versus-unknown outcome when present. Configuration,
+local validation, disabled-feature, and some fail-closed policy errors are
+sentinel-only and do not carry `*Failure`. A retryable classification does not
+authorize an automatic retry; applications own the total retry budget and must
+reconcile unknown writes. Backend bodies, credentials, endpoints, documents,
+queries, tenant labels, PIT identifiers, and cursor contents are redacted from
+public errors and telemetry.
 
-TLS verification is mandatory, proxying and discovery require explicit bounded
-policy, and search, write, and lifecycle authority are separate fail-closed
-application seams. Start with the [security guide](docs/security.md), then use
+HTTPS with peer verification is the default. `AllowInsecureHTTP` permits only
+explicit loopback HTTP endpoints and is rejected whenever basic credentials or
+a signer is configured; it is a local unauthenticated development/test opt-in,
+not a deployment mode. Proxying and discovery require explicit bounded policy,
+and search, write, and lifecycle authority are separate fail-closed application
+seams. Start with the [security guide](docs/security.md), then use
 the [deployment and shutdown checklist](docs/operations.md),
-[observability and capacity guidance](docs/observability.md), and
-[troubleshooting runbook](docs/troubleshooting.md). Compatibility, upgrades,
-and backup ownership are documented in [compatibility](docs/compatibility.md)
-and [upgrades](docs/upgrades.md).
+[observability and capacity guidance](docs/observability.md), the
+[FAQ](docs/faq.md), and [troubleshooting runbook](docs/troubleshooting.md).
+Compatibility, upgrades, and backup ownership are documented in
+[compatibility](docs/compatibility.md) and [upgrades](docs/upgrades.md).
 
 See the [documentation index](docs/README.md), including deployment, AWS,
 security, pagination, migration/rebuild, observability, upgrades, backups, and

@@ -281,7 +281,7 @@
           "compatibility": "adapters/opensearch/docs/compatibility.md",
           "performance": "adapters/opensearch/docs/observability.md",
           "examples": "adapters/opensearch/README.md",
-          "faq": "adapters/opensearch/docs/troubleshooting.md",
+          "faq": "adapters/opensearch/docs/faq.md",
           "changelog": "adapters/opensearch/CHANGELOG.md",
           "pkg_go_dev": "https://pkg.go.dev/github.com/faustbrian/go-search/adapters/opensearch",
           "ecosystem_index": "https://github.com/faustbrian/go-library-tools/blob/v1.5.3/docs/ecosystem/README.md"
