@@ -2,12 +2,14 @@
 
 ## Does the adapter retry requests?
 
-No backend request is dispatched more than once. One public operation may make
-multiple separately bounded backend requests, such as PIT create, search, and
-delete or lifecycle polling. Applications decide whether a classified,
-idempotent outcome may be retried within their total work budget. Reconcile an
-unknown mutation outcome before changing its version or issuing a
-non-idempotent follow-up.
+For each adapter-created HTTP request, the adapter invokes the configured
+`http.RoundTripper` once and adds no retry around that invocation. A
+caller-supplied transport may implement internal retries or other behavior that
+the adapter cannot count. One public operation may create multiple separately
+bounded requests, such as PIT create, search, and delete or lifecycle polling.
+Applications decide whether a classified, idempotent outcome may be retried
+within their total work budget. Reconcile an unknown mutation outcome before
+changing its version or issuing a non-idempotent follow-up.
 
 ## Does every error contain a structured Failure?
 
@@ -36,11 +38,15 @@ discards that result and becomes the returned operation error.
 
 ## Does Close terminate caller-owned resources?
 
-No. `Close` prevents subsequent backend dispatch, closes tracked point-in-time
-ownership, and releases idle connections only when transport ownership was
-transferred to the adapter. Validation and caller-owned callbacks reached before
-a dispatch check may still run, so applications must coordinate shutdown.
-Borrowed transports and application callbacks remain caller-owned.
+No. Once an operation observes the closed state at an admission check, it cannot
+dispatch a backend request. Some new operations can still validate or invoke
+caller-owned authorizers, resolvers, or guards before reaching that late check.
+Operations already past admission may invoke credentials, signers, clocks, or
+observers, dispatch, and finish after `Close` returns; `Close` does not wait for
+them. Applications must coordinate shutdown. `Close` also closes tracked
+point-in-time ownership and releases idle connections only when transport
+ownership was transferred to the adapter. Borrowed transports and application
+callbacks remain caller-owned.
 
 For incident symptoms and recovery actions, continue with the
 [troubleshooting runbook](troubleshooting.md).

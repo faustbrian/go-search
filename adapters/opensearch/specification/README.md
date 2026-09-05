@@ -2,6 +2,12 @@
 
 The [decision register](../docs/specification-decisions.md), [source pins](manifest.tsv), authority monitoring, machine conformance, and decision history govern the exact OpenSearch adapter matrix.
 
+Decision-history and changelog digests come from the validator's canonical
+`encoding/json` representation of the decision schema. Empty optional fields
+tagged `omitempty`, such as `differential_evidence`, are absent from that digest
+input. A hash of the raw source JSON object therefore differs and is not the
+decision digest.
+
 | Decision | Status | Executable boundary |
 | --- | --- | --- |
 | OPENSEARCH-DEC-001 | resolved | TestSupportedOpenSearchVersionsIncludesCurrentRelease |

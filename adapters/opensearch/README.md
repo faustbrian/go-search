@@ -32,8 +32,9 @@ go test -C adapters/opensearch -run '^ExampleClient_Search$'
 
 Replace the example transport with a peer-verified deployment transport and
 application-owned policy before production use. The adapter never discovers
-credentials, endpoints, proxy policy, authorization, or tenancy from global
-configuration.
+credentials, endpoints, authorization, or tenancy from global configuration.
+Proxying defaults off; selecting `ProxyEnvironment` explicitly opts an
+adapter-managed transport into the process environment's proxy policy.
 
 ## Production configuration outline
 
@@ -90,25 +91,33 @@ and the exact backing generation expected in response metadata as
 `IndexTarget.PhysicalName`; update that physical generation atomically inside
 the write-fenced alias cutover before writers resume.
 Authentication options are mutually exclusive, credentials are resolved for
-each request, implicit retries are disabled, response bodies are bounded, and
-borrowed transports remain caller-owned.
+each request, the adapter does not retry a configured transport invocation,
+response bodies are bounded, and borrowed transports remain caller-owned.
 
 `New(Config)` validates and copies mutable configuration before returning; it
 does not perform backend I/O or start package-owned background workers. The
-client is safe for concurrent use. Call `Close` to prevent subsequent backend
-dispatch, close tracked point-in-time state, and release only adapter-owned
-transport resources. Validation and caller-owned callbacks reached before a
-dispatch check may still run concurrently with `Close`; coordinate application
-shutdown before calling it. A borrowed `http.RoundTripper`, credential provider,
+client is safe for concurrent use. After an operation observes the closed state
+at an admission check, it cannot dispatch a backend request. Some entry points
+perform validation or invoke caller-owned authorizers, resolvers, or guards
+before that late check, even when the operation starts after `Close`. Operations
+that already passed admission may still invoke credentials, signers, clocks, or
+observers, dispatch, and finish after `Close` returns. Coordinate application
+shutdown before calling `Close`; it does not wait for these operations. Closing
+also closes tracked point-in-time state and releases only adapter-owned
+transport resources. A borrowed `http.RoundTripper`, credential provider,
 signer, resolver, authorizers, guards, and observers remain caller-owned.
 
 Caller-initiated backend work observes the caller context and the configured
-`RequestTimeout`. When `Search` still owns a PIT, its final deletion deliberately
-uses `context.WithoutCancel` so caller cancellation cannot leak backend state.
-That cleanup receives a fresh `RequestTimeout`, is awaited before `Search`
-returns, and exposes any cleanup failure. When another error already exists the
-cleanup error is joined with it; after an otherwise successful short or empty
-page, cleanup failure discards the result and is returned as the operation error.
+`RequestTimeout`. For each adapter-created HTTP request, the adapter invokes the
+configured `http.RoundTripper` once and adds no retry around that invocation; a
+caller-supplied transport may implement its own internal behavior. One public
+operation may create multiple bounded HTTP requests. When `Search` still owns a
+PIT, its final deletion deliberately uses `context.WithoutCancel` so caller
+cancellation cannot leak backend state. That cleanup receives a fresh
+`RequestTimeout`, is awaited before `Search` returns, and exposes any cleanup
+failure. When another error already exists the cleanup error is joined with it;
+after an otherwise successful short or empty page, cleanup failure discards the
+result and is returned as the operation error.
 
 ## Semantics
 

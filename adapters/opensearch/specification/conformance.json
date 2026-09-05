@@ -46,7 +46,7 @@
       "differential_evidence": [],
       "differential_classification": "not assessed",
       "public_behavior": [
-        "Endpoints, TLS, proxies, discovery trust, transport ownership, admission, and credentials are explicit and bounded; credentials refresh per request, borrowed transport trust and proxy policy remain caller-owned, and every backend request is dispatched at most once even when one operation requires multiple bounded requests."
+        "Endpoints, TLS, proxies, discovery trust, transport ownership, admission, and credentials are explicit and bounded; credentials refresh per request, adapter-managed proxying is disabled unless ProxyEnvironment or an explicit proxy is selected, borrowed transport trust and proxy policy remain caller-owned, and the adapter invokes the configured RoundTripper once per adapter-created HTTP request without adding a retry even when one operation creates multiple bounded requests."
       ]
     },
     {
@@ -65,7 +65,7 @@
       "differential_evidence": [],
       "differential_classification": "not assessed",
       "public_behavior": [
-        "Security, resource, compatibility, and wire consequences are included in the selected behavior below. Every backend request is dispatched at most once, while one public operation may make multiple separately bounded requests. Ambiguous writes and bulk items are reported as unknown, not silently retried. Durable callers reconcile ID and external version before retrying."
+        "Security, resource, compatibility, and wire consequences are included in the selected behavior below. The adapter invokes the configured RoundTripper once per adapter-created HTTP request without adding a retry; caller-supplied transport internals are outside that cardinality, and one public operation may create multiple separately bounded requests. Ambiguous writes and bulk items are reported as unknown. Durable callers reconcile ID and external version before retrying."
       ]
     },
     {
@@ -192,7 +192,7 @@
       "differential_evidence": [],
       "differential_classification": "not assessed",
       "public_behavior": [
-        "Security, resource, compatibility, and wire consequences are included in the selected behavior below. Offset pagination is shallow and bounded. Cursor pagination requires stable sort ending in _id, binds a signed cursor to tenant, query, index fingerprint, PIT, totals, and absolute expiry, and transfers PIT ownership only with a valid continuation. Every terminal or failed owned path closes the PIT and exposes cleanup failure."
+        "Security, resource, compatibility, and wire consequences are included in the selected behavior below. Offset pagination is shallow and bounded. Cursor pagination requires stable sort ending in _id, binds a signed cursor to tenant, query, index fingerprint, PIT, totals, and absolute expiry, and transfers PIT ownership only with a valid continuation. Every terminal or failed owned path attempts bounded PIT deletion and exposes cleanup failure; successful deletion releases the local lease, while deletion failure retains it until expiry is reaped or Close clears the tracker because the backend outcome is unknown."
       ]
     },
     {
@@ -370,7 +370,7 @@
       "differential_evidence": [],
       "differential_classification": "not assessed",
       "public_behavior": [
-        "Security, resource, compatibility, and wire consequences are included in the selected behavior below. Admission and queue waits are finite, circuit state prevents overload amplification, cancellation releases capacity, and all state is instance-local. Close is idempotent and closes idle resources only when ownership was transferred; borrowed transports remain caller-owned."
+        "Security, resource, compatibility, and wire consequences are included in the selected behavior below. Admission and queue waits are finite, circuit state prevents overload amplification, cancellation releases capacity, and all state is instance-local. Close is idempotent: after an operation observes closed at an admission check it cannot dispatch, but a new operation may validate or invoke caller-owned policy callbacks before a late check, and an already-admitted operation may invoke transport callbacks, dispatch, or finish after Close returns. Close does not wait for those operations and releases idle resources only when ownership was transferred; borrowed transports remain caller-owned."
       ]
     },
     {
