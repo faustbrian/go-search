@@ -95,16 +95,20 @@ borrowed transports remain caller-owned.
 
 `New(Config)` validates and copies mutable configuration before returning; it
 does not perform backend I/O or start package-owned background workers. The
-client is safe for concurrent use. Call `Close` to reject new work, close
-tracked point-in-time state, and release only adapter-owned transport resources.
-A borrowed `http.RoundTripper`, credential provider, signer, resolver,
-authorizers, guards, and observers remain caller-owned.
+client is safe for concurrent use. Call `Close` to prevent subsequent backend
+dispatch, close tracked point-in-time state, and release only adapter-owned
+transport resources. Validation and caller-owned callbacks reached before a
+dispatch check may still run concurrently with `Close`; coordinate application
+shutdown before calling it. A borrowed `http.RoundTripper`, credential provider,
+signer, resolver, authorizers, guards, and observers remain caller-owned.
 
 Caller-initiated backend work observes the caller context and the configured
 `RequestTimeout`. When `Search` still owns a PIT, its final deletion deliberately
 uses `context.WithoutCancel` so caller cancellation cannot leak backend state.
 That cleanup receives a fresh `RequestTimeout`, is awaited before `Search`
-returns, and joins any cleanup failure into the returned error.
+returns, and exposes any cleanup failure. When another error already exists the
+cleanup error is joined with it; after an otherwise successful short or empty
+page, cleanup failure discards the result and is returned as the operation error.
 
 ## Semantics
 

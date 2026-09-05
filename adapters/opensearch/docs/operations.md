@@ -27,9 +27,11 @@
 
 The adapter rotates configured endpoints, bounds in-flight work and optional
 waiting, opens a process-local circuit after a configured sequence of transport
-or overload failures, and performs exactly one downstream attempt. Discovery
-is explicit rather than timer-driven. It atomically replaces the pool only when
-every eligible publish address passes the DNS/CIDR trust policy.
+or overload failures, and dispatches each backend request at most once. A public
+operation may issue multiple separately bounded requests, including PIT
+lifecycle or lifecycle polling. Discovery is explicit rather than timer-driven.
+It atomically replaces the pool only when every eligible publish address passes
+the DNS/CIDR trust policy.
 
 ## Retry and overload policy
 

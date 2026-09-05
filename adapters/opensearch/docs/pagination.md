@@ -24,11 +24,12 @@ configured OpenSearch keep-alive, so keep that duration short.
 PIT cleanup deliberately detaches from caller cancellation with
 `context.WithoutCancel`, retains context values, and receives a fresh
 adapter-level `RequestTimeout`. `Search` waits for that bounded deletion before
-returning and joins a cleanup failure with the primary result. This exception
-applies only to adapter-owned final cleanup. Credential-provider and signer
-callbacks needed for that delete receive the detached, freshly bounded cleanup
-context; search authorization and resolution callbacks use the original caller
-context.
+returning. A cleanup failure joins an existing search error. After an otherwise
+successful short or empty page, however, cleanup failure discards the result and
+is returned as the operation error. This exception applies only to
+adapter-owned final cleanup. Credential-provider and signer callbacks needed
+for that delete receive the detached, freshly bounded cleanup context; search
+authorization and resolution callbacks use the original caller context.
 `MaximumOpenPointInTimes` bounds leases owned or adopted by one client process;
 `PointInTimeSnapshot` exposes only that process-local aggregate to operators.
 It excludes cursors owned by other instances and must not be exposed as

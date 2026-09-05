@@ -24,7 +24,10 @@ official `signer.Signer` interface. AWS signing uses the maintained
 official default transport's environment discovery, retry, or node retry
 layers: its single-attempt transport owns endpoint trust, proxy policy,
 credential refresh, response bounds, admission, circuit state, and connection
-shutdown so client retries cannot multiply package retries.
+shutdown so client retries cannot multiply package retries. Each backend
+request is dispatched at most once, while one public operation may issue
+multiple separately bounded requests for PIT lifecycle, polling, verification,
+or other documented orchestration.
 
 Typed translation covers boolean, term, multi-match full text, prefix, range,
 exists, geo-distance, sort/missing placement, source projection, highlights,

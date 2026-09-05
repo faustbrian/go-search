@@ -6,18 +6,21 @@ address, and is rejected when basic credentials or an AWS signer is configured.
 Use that unauthenticated opt-in only for disposable local development and test
 services, never for a deployed endpoint.
 
-TLS configured through `Config.TLS` rejects `InsecureSkipVerify`. A
-caller-supplied borrowed transport retains its caller-owned TLS configuration;
-an owned caller-supplied `*http.Transport` is cloned while preserving its
-`TLSClientConfig`. The caller is therefore responsible for peer verification,
-root CAs, and any other trust policy embedded in a supplied transport.
+TLS configured through `Config.TLS` rejects `InsecureSkipVerify`. For an owned
+`*http.Transport`, a non-nil `Config.TLS` replaces the cloned transport's
+`TLSClientConfig`; otherwise its existing TLS configuration is cloned. The
+adapter then enforces a TLS 1.2 minimum on that owned clone. A borrowed
+transport is used unchanged and cannot be combined with `Config.TLS` or a
+non-disabled `Config.Proxy`. Its TLS verification, root CAs, proxy behavior,
+and other transport trust policy remain entirely the caller's responsibility.
 
 Basic credentials and AWS request signing are mutually exclusive. Credential
 providers are consulted for every request so rotation does not require client
 replacement. The adapter rejects credentials over plaintext HTTP, endpoint
 userinfo, implicit environment proxies, insecure `Config.TLS`, and untrusted
-discovery addresses. Caller-supplied transport trust remains the caller's
-security boundary.
+discovery addresses on adapter-configured transports. A borrowed transport may
+apply its own proxy policy; that caller-owned behavior is outside these adapter
+configuration guarantees.
 
 The index resolver must authorize tenant, logical index, and access mode before
 returning a request alias and its exact tenant-owned backing generation.
