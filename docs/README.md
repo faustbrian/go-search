@@ -10,3 +10,37 @@
 - [Security](security.md)
 - [Track and Location adoption](adoption.md)
 - [FAQ](faq.md)
+- [Compatibility policy](../COMPATIBILITY.md)
+- [Deprecation and migration policy](../DEPRECATION.md)
+- [Testing and contributing](../CONTRIBUTING.md#verification)
+- [Support](../SUPPORT.md)
+- [Security reporting](../SECURITY.md)
+- [Release notes](../CHANGELOG.md)
+- [Versioned Golib ecosystem index](https://github.com/faustbrian/go-library-tools/blob/v1.5.3/docs/ecosystem/README.md)
+
+## OpenSearch adapter
+
+These repository-indexed destinations are included in the shared native
+documentation link and anchor check.
+
+- [Module entry point](../adapters/opensearch/README.md)
+- [Executable example](../adapters/opensearch/example_test.go)
+- [Documentation index](../adapters/opensearch/docs/README.md)
+- [API and compatibility inventory](../adapters/opensearch/docs/api-inventory.md)
+- [Compatibility and capabilities](../adapters/opensearch/docs/compatibility.md)
+- [Conformance](../adapters/opensearch/docs/conformance.md)
+- [Operations and deployment](../adapters/opensearch/docs/operations.md)
+- [Observability and capacity](../adapters/opensearch/docs/observability.md)
+- [Security and authentication](../adapters/opensearch/docs/security.md)
+- [Pagination and cursor ownership](../adapters/opensearch/docs/pagination.md)
+- [Upgrades and backup boundaries](../adapters/opensearch/docs/upgrades.md)
+- [FAQ](../adapters/opensearch/docs/faq.md)
+- [Troubleshooting](../adapters/opensearch/docs/troubleshooting.md)
+- [Real-cluster testing](../adapters/opensearch/docs/real-cluster-testing.md)
+- [Specification decisions](../adapters/opensearch/docs/specification-decisions.md)
+- [Testing and contributing](../CONTRIBUTING.md#verification)
+- [Support](../SUPPORT.md)
+- [Security reporting](../SECURITY.md)
+- [Adapter release notes](../adapters/opensearch/CHANGELOG.md)
+- [Deprecation policy](../DEPRECATION.md)
+- [Integration and data movement family](https://github.com/faustbrian/go-library-tools/blob/v1.5.3/docs/ecosystem/design-language.md#package-families-and-selection)

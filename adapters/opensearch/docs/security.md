@@ -1,10 +1,30 @@
 # Security and authentication
 
+HTTPS with peer verification is the default endpoint policy. Plain HTTP
+requires `AllowInsecureHTTP`, is limited to `localhost` or an IP loopback
+address, and is rejected when basic credentials or an AWS signer is configured.
+Use that unauthenticated opt-in only for disposable local development and test
+services, never for a deployed endpoint.
+
+TLS configured through `Config.TLS` rejects `InsecureSkipVerify`. For an owned
+`*http.Transport`, a non-nil `Config.TLS` replaces the cloned transport's
+`TLSClientConfig`; otherwise its existing TLS configuration is cloned. The
+adapter then enforces a TLS 1.2 minimum on that owned clone. With nil
+`Config.TLS`, this preserves caller settings including `InsecureSkipVerify`, so
+peer verification and root CAs in a supplied transport remain a caller trust
+boundary. A borrowed transport is used unchanged and cannot be combined with
+`Config.TLS` or a non-disabled `Config.Proxy`; its TLS and proxy behavior remain
+entirely the caller's responsibility.
+
 Basic credentials and AWS request signing are mutually exclusive. Credential
 providers are consulted for every request so rotation does not require client
 replacement. The adapter rejects credentials over plaintext HTTP, endpoint
-userinfo, implicit environment proxies, insecure TLS, and untrusted discovery
-addresses.
+userinfo, insecure `Config.TLS`, and untrusted discovery addresses on
+adapter-configured transports. Proxying is never selected implicitly:
+`ProxyEnvironment` explicitly opts an adapter-managed transport into the
+process environment, while the default disables proxying. A borrowed transport
+may apply its own proxy policy; that caller-owned behavior is outside these
+adapter configuration guarantees.
 
 The index resolver must authorize tenant, logical index, and access mode before
 returning a request alias and its exact tenant-owned backing generation.

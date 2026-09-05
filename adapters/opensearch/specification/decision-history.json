@@ -10,13 +10,17 @@
     {
       "id": "OPENSEARCH-DEC-002",
       "digests": [
-        "85da03df0c652a99065b3326d69cce5727ff1f3b24fcbc3d059ec84d8da6e755"
+        "85da03df0c652a99065b3326d69cce5727ff1f3b24fcbc3d059ec84d8da6e755",
+        "41d2f58220622212aea0659e461e20491336564e7ef382bce5543349c237e774",
+        "ba175748e2031c33b1a96f13c1544908dac8570508b9c0feb3b4a3191136e600"
       ]
     },
     {
       "id": "OPENSEARCH-DEC-003",
       "digests": [
-        "79ea9e0cbe25b39763f1ad5030501198dd7e44cf26271e5bfe6ba2cbc6b247aa"
+        "79ea9e0cbe25b39763f1ad5030501198dd7e44cf26271e5bfe6ba2cbc6b247aa",
+        "1c85d92305a3e1175b6638175e9296e214f15a9efbaf7fb2a0a02596476c323d",
+        "abcd555649052c7b680be4bddf1feafd335c46bcf7392a35a9bc59f8079383c1"
       ]
     },
     {
@@ -52,7 +56,8 @@
     {
       "id": "OPENSEARCH-DEC-009",
       "digests": [
-        "a58ecb4e117ef864bc0f3ba1b9446443bce134837ccd88ef111895beb30ce1ee"
+        "a58ecb4e117ef864bc0f3ba1b9446443bce134837ccd88ef111895beb30ce1ee",
+        "bbe8fadacc643b36936d08ad5e65e0e4b4e37d400cce590c05a1abade8eece60"
       ]
     },
     {
@@ -100,7 +105,8 @@
     {
       "id": "OPENSEARCH-DEC-017",
       "digests": [
-        "cd87c2a79e9240db5ddd198101b999e9220f53d5dd011bc058273452f48cbe62"
+        "cd87c2a79e9240db5ddd198101b999e9220f53d5dd011bc058273452f48cbe62",
+        "b2a6e36f52727bf149ca32643e5d74e33df722374985bc4ac1ddae268443002f"
       ]
     },
     {

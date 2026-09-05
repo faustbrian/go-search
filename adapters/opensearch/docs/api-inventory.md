@@ -20,11 +20,15 @@ verified.
 
 The adapter uses the official client's `Client.Stream` transport contract and
 official `signer.Signer` interface. AWS signing uses the maintained
-`signer/awsv2` implementation. The adapter deliberately does not use the
+`signer/awsv2` implementation. The adapter deliberately does not enable the
 official default transport's environment discovery, retry, or node retry
-layers: its single-attempt transport owns endpoint trust, proxy policy,
-credential refresh, response bounds, admission, circuit state, and connection
-shutdown so client retries cannot multiply package retries.
+layers. For each adapter-created HTTP request, it invokes the configured
+`http.RoundTripper` once and adds no retry around that invocation. A
+caller-supplied transport may implement its own internal behavior. The
+adapter-managed transport owns endpoint trust, proxy policy, credential refresh,
+response bounds, admission, circuit state, and connection shutdown. One public
+operation may issue multiple separately bounded requests for PIT lifecycle,
+polling, verification, or other documented orchestration.
 
 Typed translation covers boolean, term, multi-match full text, prefix, range,
 exists, geo-distance, sort/missing placement, source projection, highlights,

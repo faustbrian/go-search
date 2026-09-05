@@ -19,8 +19,9 @@ All notable changes to this module are documented here.
 
 ### Documentation
 
-- Point the root README directly to the immutable v1.4.0 ecosystem index and
-  integration-and-data-movement family guidance.
+- Complete the module entry contract with canonical installation, executable
+  adoption, ownership, lifecycle, errors, security, compatibility, performance,
+  troubleshooting, testing, support, and v1.5.3 ecosystem navigation.
 - Publish the module's family, selection, ownership, lifecycle, support, and
   delivery metadata with versioned ecosystem navigation.
 
