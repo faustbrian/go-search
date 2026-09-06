@@ -19,6 +19,9 @@ All notable changes to this module are documented here.
 
 ### Documentation
 
+- Link the live issue and discussion routes and enable private vulnerability
+  reporting with an actionable security-advisory path.
+
 - Complete the module entry contract with canonical installation, executable
   adoption, ownership, lifecycle, errors, security, compatibility, performance,
   troubleshooting, testing, support, and v1.5.3 ecosystem navigation.
