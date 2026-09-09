@@ -12,8 +12,14 @@
   monitoring-only while retaining the exact v4.7.3 client, behavior, and
   support boundary for OPENSEARCH-DEC-001 through OPENSEARCH-DEC-005 and
   OPENSEARCH-DEC-017.
+- Record the reviewed `opensearch-go` v5.0.0-rc7 release-feed drift, limited
+  to v5 nested-module and workspace maintenance, without widening the exact
+  supported v4.7.3 client boundary.
 
 ### Documentation
+
+- Add an executable Track and Location projection recipe covering public
+  write/read boundaries, external-version replay, failures, secrets, and close.
 
 - Complete the adapter entry contract with canonical installation, executable
   adoption, ownership, lifecycle, errors, security, exact platform/backend
