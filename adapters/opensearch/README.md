@@ -30,6 +30,10 @@ then performs a typed search. From a repository checkout, run it with:
 go test -C adapters/opensearch -run '^ExampleClient_Search$'
 ```
 
+For an executable write-through-read composition, use the checked
+[`ExampleClient_trackLocationProjection`](track_location_projection_example_test.go)
+and its complete [Track and Location projection contract](docs/track-location-projection.md).
+
 Replace the example transport with a peer-verified deployment transport and
 application-owned policy before production use. The adapter never discovers
 credentials, endpoints, authorization, or tenancy from global configuration.

@@ -7,6 +7,7 @@ versions, security, performance, testing, support, and ecosystem navigation.
 - [Compatibility and capabilities](compatibility.md)
 - [OpenSearch conformance](conformance.md)
 - [Specification decisions](specification-decisions.md)
+- [Track and Location projection composition](track-location-projection.md)
 - [Operations and deployment](operations.md)
 - [AWS authentication and managed deployments](aws.md)
 - [Security and authentication](security.md)

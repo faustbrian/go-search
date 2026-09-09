@@ -20,3 +20,8 @@ highlights, type facets, and suggestions.
 Both applications must re-authorize returned IDs against current source data,
 define projection-lag behavior, expose bounded cursor traversal, and own ranking
 tests against the deployed OpenSearch version and mappings.
+
+The OpenSearch adapter provides a checked
+[Track and Location projection composition](../adapters/opensearch/docs/track-location-projection.md)
+covering construction, source/outbox ownership, external-version ordering,
+failure recovery, query visibility, secrets, observability, and shutdown.

@@ -19,6 +19,9 @@ All notable changes to this module are documented here.
 
 ### Documentation
 
+- Add a checked Track and Location projection composition with explicit
+  source-of-truth, ordering, failure, configuration, and shutdown ownership.
+
 - Link the live issue and discussion routes and enable private vulnerability
   reporting with an actionable security-advisory path.
 

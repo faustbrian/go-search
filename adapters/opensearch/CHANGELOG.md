@@ -15,6 +15,9 @@
 
 ### Documentation
 
+- Add an executable Track and Location projection recipe covering public
+  write/read boundaries, external-version replay, failures, secrets, and close.
+
 - Complete the adapter entry contract with canonical installation, executable
   adoption, ownership, lifecycle, errors, security, exact platform/backend
   compatibility, bounded detached PIT cleanup, a dedicated FAQ, operations,
