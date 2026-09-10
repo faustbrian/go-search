@@ -1,12 +1,12 @@
 {
   "schema_version": 2,
   "repository": "github.com/faustbrian/go-search",
-  "go_version": "1.27.0",
+  "go_version": "1.26.6",
   "modules": [
     {
       "directory": ".",
       "module_path": "github.com/faustbrian/go-search",
-      "go_version": "1.27.0",
+      "go_version": "1.26.6",
       "packages": [
         {
           "module_directory": ".",
@@ -151,7 +151,7 @@
     {
       "directory": "adapters/opensearch",
       "module_path": "github.com/faustbrian/go-search/adapters/opensearch",
-      "go_version": "1.27.0",
+      "go_version": "1.26.6",
       "packages": [
         {
           "module_directory": "adapters/opensearch",
