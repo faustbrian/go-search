@@ -36,10 +36,10 @@ go test -C adapters/opensearch -run \
   tenant policy, mappings, or the OpenSearch deployment.
 
 The supported released pair is core `v1.0.0` with adapter
-`adapters/opensearch/v1.0.0`, Go 1.27.0, `opensearch-go/v4` v4.7.3, and
+`adapters/opensearch/v1.0.0`, Go 1.26.6, `opensearch-go/v4` v4.7.3, and
 OpenSearch 2.19.6 or 3.8.0. The checked recipe validates the public composition;
 the [compatibility guide](compatibility.md) defines the separately maintained
-real-backend matrix.
+real-backend matrix. Current unreleased source requires Go 1.27.0.
 
 ## Construction and execution order
 
