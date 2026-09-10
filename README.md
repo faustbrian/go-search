@@ -7,7 +7,7 @@
 [![Documentation](https://img.shields.io/badge/docs-checked_in_CI-blue)](docs/)
 [![Go Reference](https://pkg.go.dev/badge/github.com/faustbrian/go-search.svg)](https://pkg.go.dev/github.com/faustbrian/go-search)
 [![Release](https://img.shields.io/github/v/release/faustbrian/go-search?sort=semver)](https://github.com/faustbrian/go-search/releases)
-[![Go](https://img.shields.io/badge/go-1.26.6-00ADD8?logo=go)](https://go.dev/)
+[![Go](https://img.shields.io/badge/go-1.27.0-00ADD8?logo=go)](https://go.dev/)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
 `search` provides backend-neutral contracts for bounded document indexing,
@@ -20,7 +20,7 @@ is [`adapters/opensearch`](adapters/opensearch/README.md). Backend capabilities
 are explicit: unsupported typed features fail validation instead of silently
 degrading to a query string.
 
-`search` is a stable v1 module. It supports Go 1.26.6 on every platform
+`search` is a stable v1 module. It supports Go 1.27.0 on every platform
 supported by that toolchain and has no required service or runtime dependency.
 
 ## Install
