@@ -1,6 +1,6 @@
 module github.com/faustbrian/go-search/adapters/opensearch
 
-go 1.26.6
+go 1.27.0
 
 tool golang.org/x/perf/cmd/benchstat
 
