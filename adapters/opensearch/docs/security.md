@@ -1,5 +1,9 @@
 # Security and authentication
 
+The versioned [repository threat model](../../../docs/threat-model.md) covers
+the core and this adapter together, including caller-owned transport, DNS,
+authorization, lifecycle, privacy and fleet-resource boundaries.
+
 HTTPS with peer verification is the default endpoint policy. Plain HTTP
 requires `AllowInsecureHTTP`, is limited to `localhost` or an IP loopback
 address, and is rejected when basic credentials or an AWS signer is configured.

@@ -11,6 +11,7 @@ versions, security, performance, testing, support, and ecosystem navigation.
 - [Operations and deployment](operations.md)
 - [AWS authentication and managed deployments](aws.md)
 - [Security and authentication](security.md)
+- [Repository threat model and risk ownership](../../../docs/threat-model.md)
 - [Mappings and analyzer ownership](mappings.md)
 - [Pagination and cursor ownership](pagination.md)
 - [Migration, rebuild, replay, and reconciliation](rebuild.md)
