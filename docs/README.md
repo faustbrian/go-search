@@ -18,7 +18,7 @@
 - [Support](../SUPPORT.md)
 - [Security reporting](../SECURITY.md)
 - [Release notes](../CHANGELOG.md)
-- [Versioned Golib ecosystem index](https://github.com/faustbrian/go-library-tools/blob/v1.5.3/docs/ecosystem/README.md)
+- [Versioned Golib ecosystem index](https://github.com/faustbrian/go-library-tools/tree/v1.5.3/docs/ecosystem)
 
 ## OpenSearch adapter
 
