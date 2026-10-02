@@ -12,8 +12,8 @@ The root `github.com/faustbrian/go-search` module owns typed documents, query
 validation, signed cursors, projection events, reconciliation, migration
 coordination contracts, and the `searchtest` fake. The only maintained backend
 adapter is the separately releasable nested
-`github.com/faustbrian/go-search/adapters/opensearch` module. No Elasticsearch,
-Meilisearch, or other backend implementation is implied by the core interfaces.
+`github.com/faustbrian/go-search/adapters/opensearch` module. No other backend
+implementation is implied by the core interfaces.
 
 Assets include tenant documents, field permissions, query and source contents,
 external versions and durable tombstones, migration state, aliases and physical
