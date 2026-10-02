@@ -8,6 +8,7 @@
 - [Bulk ingestion and rebuilds](bulk-and-rebuild.md)
 - [Operations and capacity](operations.md)
 - [Security](security.md)
+- [Repository threat model and risk ownership](threat-model.md)
 - [Track and Location adoption](adoption.md)
 - [Executable Track and Location projection](../adapters/opensearch/docs/track-location-projection.md)
 - [FAQ](faq.md)
