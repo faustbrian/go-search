@@ -175,9 +175,11 @@ func TestLifecycleMutationWaitsForAsynchronousCallbackBeforeRejectingGuard(t *te
 	t.Parallel()
 
 	transportEntered := make(chan struct{})
-	releaseTransport := make(chan struct{})
+	transportCompleted := make(chan struct{})
 	guardReturned := make(chan struct{})
-	guard := adapter.LifecycleMutationGuardFunc(func(_ context.Context, _ adapter.LifecycleMutationRequest, operation func() error) error {
+	guardContext := make(chan context.Context, 1)
+	guard := adapter.LifecycleMutationGuardFunc(func(ctx context.Context, _ adapter.LifecycleMutationRequest, operation func() error) error {
+		guardContext <- ctx
 		go func() { _ = operation() }()
 		<-transportEntered
 		close(guardReturned)
@@ -185,19 +187,23 @@ func TestLifecycleMutationWaitsForAsynchronousCallbackBeforeRejectingGuard(t *te
 	})
 	client := newCutoverClientWithMutationGuard(t, guard, roundTripFunc(func(*http.Request) (*http.Response, error) {
 		close(transportEntered)
-		<-releaseTransport
+		// The guard context is cancelled after the adapter observes guard return.
+		// The HTTP child's independent deadline must not release this callback
+		// before that observation and make an asynchronous guard look synchronous.
+		operationContext := <-guardContext
+		<-operationContext.Done()
+		close(transportCompleted)
 		return cursorResponse(http.StatusOK, `{"acknowledged":true}`), nil
 	}))
 	done := make(chan error, 1)
 	go func() { done <- client.AddAlias(t.Context(), "tenant", "events-read", "events-v1", true) }()
 	<-guardReturned
-	select {
-	case err := <-done:
-		t.Fatalf("AddAlias() returned before its callback completed: %v", err)
-	default:
-	}
-	close(releaseTransport)
 	err := <-done
+	select {
+	case <-transportCompleted:
+	default:
+		t.Fatalf("AddAlias() returned before its callback completed: %v", err)
+	}
 	var failure *adapter.Failure
 	if !errors.Is(err, adapter.ErrLifecycleMutationGuardRejected) || !errors.As(err, &failure) || failure.OutcomeKnown {
 		t.Fatalf("asynchronous lifecycle mutation error = %#v, want unknown guard rejection", err)
