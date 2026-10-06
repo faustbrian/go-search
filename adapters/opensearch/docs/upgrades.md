@@ -1,7 +1,7 @@
 # Upgrades and backup boundaries
 
 The release matrix proves exact OpenSearch versions `2.19.6` and `3.8.0` with
-official Go client `v4.7.3`. Treat any other patch, plugin, analyzer, or managed
+official Go client `v4.8.0`. Treat any other patch, plugin, analyzer, or managed
 service profile as unverified until conformance is rerun.
 
 Before an OpenSearch upgrade:
@@ -43,9 +43,14 @@ mapping, deserialization-depth, path-boundary, and dependency security fixes.
 The adapter does not adopt new 3.8-only APIs, so its HTTP surface remains in the
 2.19/3.8 common subset.
 
+The current client adoption moves to v4.8.0 without adding a server version
+or selecting the official retry/router or bulk-utility paths. The separately
+reviewed AWS signer now passes request cancellation to credential retrieval.
+
 Primary references:
 
 - <https://github.com/opensearch-project/OpenSearch/releases/tag/2.19.6>
 - <https://github.com/opensearch-project/OpenSearch/releases/tag/3.8.0>
 - <https://github.com/opensearch-project/opensearch-go/releases/tag/v4.7.3>
+- <https://github.com/opensearch-project/opensearch-go/releases/tag/v4.8.0>
 - <https://docs.opensearch.org/latest/migrate-or-upgrade/rolling-upgrade/>

@@ -4,6 +4,13 @@ Use the official OpenSearch client's AWS SDK v2 signer. The AWS SDK credential
 provider chain owns refresh and rotation; the adapter invokes the signer for
 every request and does not cache credentials.
 
+The v4.8.0 signer passes request cancellation and deadlines to credential
+retrieval. Credential providers remain caller-owned. A caller-supplied STS
+AssumeRole provider with rejecting response interceptors can encounter the
+[AWS SDK response-body cleanup bug](https://github.com/aws/aws-sdk-go-v2/issues/3579).
+The adapter installs neither that provider nor those interceptors; ordinary
+OpenSearch requests use its own transport and response-body ownership.
+
 ```go
 awsConfig, err := config.LoadDefaultConfig(ctx,
     config.WithRegion("eu-north-1"),
