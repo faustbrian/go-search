@@ -5,7 +5,7 @@ go 1.27.0
 tool golang.org/x/perf/cmd/benchstat
 
 require (
-	github.com/aws/aws-sdk-go-v2 v1.47.0
+	github.com/aws/aws-sdk-go-v2 v1.47.1
 	github.com/faustbrian/go-search v1.0.0
 	github.com/opensearch-project/opensearch-go/v4 v4.8.0
 )
