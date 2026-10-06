@@ -4,6 +4,15 @@
 
 ### Changed
 
+- Adopt the official OpenSearch Go client v4.8.0 with AWS SDK v1.47.0 and
+  its resolved dependency graph. Official AWS signer credential retrieval now
+  honors request cancellation before HTTP dispatch and releases admission.
+  Preserve the owned REST policies, Go 1.27.0 floor, and existing server matrix.
+- Align current client identities and immutable source locks with v4.8.0 while
+  retaining historical compatibility records. Caller-owned STS providers with
+  rejecting response interceptors remain affected by AWS SDK issue #3579;
+  this adapter does not install that provider/interceptor composition.
+
 - Adopt the `go-library-tools` v1.4.0 schema-v2 cohesion contract and immutable
   reusable CI workflow without changing adapter API or runtime behavior.
 - Keep package-owned verification executable from the nested module boundary
@@ -35,6 +44,13 @@
   client matrix.
 
 #### Specification Decisions
+
+- OPENSEARCH-DEC-001 sha256:94ff7cdfc15db37ca973925099e90ca0c98d3124c6372bf887045b82506e311a
+- OPENSEARCH-DEC-002 sha256:dc684551d28b92c80ef18f945b175b5c593bf002401939b10c06e01314125ebd
+- OPENSEARCH-DEC-003 sha256:c4f03dd07f19462e97d269c41225d631fc04dc69767916e5749f5d340c4d0157
+- OPENSEARCH-DEC-004 sha256:6becd674f4792259cc907f089eb2a7c3f8875f4b8c8993be4d0e82cc5fb05d38
+- OPENSEARCH-DEC-005 sha256:a205cdcc2d993e25936927badac90effd6ce75e23aea32dc83ec871b1188f57c
+- OPENSEARCH-DEC-017 sha256:7a0ae3bd3c301e20fcc4cce34ab8433a10b7beb12cc126b80ef8470f7be23070
 
 - OPENSEARCH-DEC-001 sha256:87f4d17cc03f47cd36dd12f9d1b669a989ca3c8b1b8317cd94afd16f6a44e805
 - OPENSEARCH-DEC-002 sha256:ba175748e2031c33b1a96f13c1544908dac8570508b9c0feb3b4a3191136e600

@@ -4,7 +4,8 @@
     {
       "id": "OPENSEARCH-DEC-001",
       "digests": [
-        "87f4d17cc03f47cd36dd12f9d1b669a989ca3c8b1b8317cd94afd16f6a44e805"
+        "87f4d17cc03f47cd36dd12f9d1b669a989ca3c8b1b8317cd94afd16f6a44e805",
+        "94ff7cdfc15db37ca973925099e90ca0c98d3124c6372bf887045b82506e311a"
       ]
     },
     {
@@ -12,7 +13,8 @@
       "digests": [
         "85da03df0c652a99065b3326d69cce5727ff1f3b24fcbc3d059ec84d8da6e755",
         "41d2f58220622212aea0659e461e20491336564e7ef382bce5543349c237e774",
-        "ba175748e2031c33b1a96f13c1544908dac8570508b9c0feb3b4a3191136e600"
+        "ba175748e2031c33b1a96f13c1544908dac8570508b9c0feb3b4a3191136e600",
+        "dc684551d28b92c80ef18f945b175b5c593bf002401939b10c06e01314125ebd"
       ]
     },
     {
@@ -20,19 +22,22 @@
       "digests": [
         "79ea9e0cbe25b39763f1ad5030501198dd7e44cf26271e5bfe6ba2cbc6b247aa",
         "1c85d92305a3e1175b6638175e9296e214f15a9efbaf7fb2a0a02596476c323d",
-        "abcd555649052c7b680be4bddf1feafd335c46bcf7392a35a9bc59f8079383c1"
+        "abcd555649052c7b680be4bddf1feafd335c46bcf7392a35a9bc59f8079383c1",
+        "c4f03dd07f19462e97d269c41225d631fc04dc69767916e5749f5d340c4d0157"
       ]
     },
     {
       "id": "OPENSEARCH-DEC-004",
       "digests": [
-        "afcd21d67efe4b6e5ea1d5927f3c8898a68cd11f5b898f2fb26f72c4725a7d6d"
+        "afcd21d67efe4b6e5ea1d5927f3c8898a68cd11f5b898f2fb26f72c4725a7d6d",
+        "6becd674f4792259cc907f089eb2a7c3f8875f4b8c8993be4d0e82cc5fb05d38"
       ]
     },
     {
       "id": "OPENSEARCH-DEC-005",
       "digests": [
-        "50196dbe63f6a15d3b7bdbeda8c4392f3165f54b2eefbe1437e38029e25b9cd7"
+        "50196dbe63f6a15d3b7bdbeda8c4392f3165f54b2eefbe1437e38029e25b9cd7",
+        "a205cdcc2d993e25936927badac90effd6ce75e23aea32dc83ec871b1188f57c"
       ]
     },
     {
@@ -106,7 +111,8 @@
       "id": "OPENSEARCH-DEC-017",
       "digests": [
         "cd87c2a79e9240db5ddd198101b999e9220f53d5dd011bc058273452f48cbe62",
-        "b2a6e36f52727bf149ca32643e5d74e33df722374985bc4ac1ddae268443002f"
+        "b2a6e36f52727bf149ca32643e5d74e33df722374985bc4ac1ddae268443002f",
+        "7a0ae3bd3c301e20fcc4cce34ab8433a10b7beb12cc126b80ef8470f7be23070"
       ]
     },
     {

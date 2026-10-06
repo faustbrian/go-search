@@ -36,6 +36,15 @@ decision digest.
 
 The version matrix is provider interoperability and version-differential evidence. It does not imply equivalent ranking, mappings, analyzers, plugins, managed-service extensions, or unlisted patch behavior. Release and errata feed drift blocks the online check pending review and never changes behavior automatically.
 
+## Client adoption: 2026-10-06
+
+The current matrix adopts `opensearch-go/v4` `4.8.0` at immutable source
+`161f33e0d923e7414b3e390c2b40af8f4a311310`, retaining server `2.19.6`/`3.8.0`.
+Current source locks and decisions reflect that client. Prior dated feed
+reviews below remain historical dispositions, not the current client pin.
+The adapter still owns transport, retries, admission, and response bounds;
+the official AWS signer now propagates request cancellation to credentials.
+
 ## Release-feed review: 2026-10-02
 
 Review owner: OpenSearch adapter maintainers. This source-based review of the
