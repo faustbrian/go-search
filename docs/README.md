@@ -8,6 +8,7 @@
 - [Bulk ingestion and rebuilds](bulk-and-rebuild.md)
 - [Operations and capacity](operations.md)
 - [Security](security.md)
+- [Repository threat model and risk ownership](threat-model.md)
 - [Track and Location adoption](adoption.md)
 - [Executable Track and Location projection](../adapters/opensearch/docs/track-location-projection.md)
 - [FAQ](faq.md)
@@ -17,7 +18,7 @@
 - [Support](../SUPPORT.md)
 - [Security reporting](../SECURITY.md)
 - [Release notes](../CHANGELOG.md)
-- [Versioned Golib ecosystem index](https://github.com/faustbrian/go-library-tools/blob/v1.5.3/docs/ecosystem/README.md)
+- [Versioned Golib ecosystem index](https://github.com/faustbrian/go-library-tools/tree/v1.5.3/docs/ecosystem)
 
 ## OpenSearch adapter
 

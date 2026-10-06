@@ -160,7 +160,7 @@ mutation, benchmark, API, and security checks.
 
 For shared package families, selection guidance, ownership, and lifecycle
 vocabulary, see the versioned [v1.5.3 Golib ecosystem
-index](https://github.com/faustbrian/go-library-tools/blob/v1.5.3/docs/ecosystem/README.md)
+index](https://github.com/faustbrian/go-library-tools/tree/v1.5.3/docs/ecosystem)
 and its [Integration and data movement family](https://github.com/faustbrian/go-library-tools/blob/v1.5.3/docs/ecosystem/design-language.md#package-families-and-selection).
 
 ## License

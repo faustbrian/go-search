@@ -1,5 +1,8 @@
 # Security
 
+See the versioned [repository threat model](threat-model.md) for audited
+boundaries, residual owners, review conditions and evidence limitations.
+
 Authorize tenant, logical index, operation, field projection, filters, raw
 extensions, and lifecycle resources before network access. Never derive a
 physical index name directly from untrusted input. The OpenSearch adapter uses
