@@ -2,7 +2,16 @@
 
 ## Unreleased
 
+## 1.1.0 - 2026-10-06
+
 ### Changed
+
+- Require Go 1.27.0, raised from the published v1.0.0 minimum of
+  Go 1.26.6. Upgrade development and CI toolchains before adopting this
+  release; exported APIs remain unchanged.
+
+- Select AWS SDK core v1.47.1 in the reviewed OpenSearch client graph,
+  retaining request-cancellation and credential-admission behavior.
 
 - Adopt the official OpenSearch Go client v4.8.0 with AWS SDK v1.47.0 and
   its resolved dependency graph. Official AWS signer credential retrieval now
