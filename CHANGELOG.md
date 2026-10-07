@@ -4,7 +4,13 @@ All notable changes to this module are documented here.
 
 ## Unreleased
 
+## 1.1.0 - 2026-10-06
+
 ### Changed
+
+- Require Go 1.27.0, raised from the published v1.0.0 minimum of
+  Go 1.26.6. Upgrade development and CI toolchains before adopting this
+  release; exported APIs remain unchanged.
 
 - Adopt the `go-library-tools` v1.4.0 schema-v2 cohesion contract, immutable
   reusable CI workflow, and local `make cohesion` gate without changing the
