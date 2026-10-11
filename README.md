@@ -3,7 +3,7 @@
 [![CI](https://github.com/faustbrian/go-search/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/faustbrian/go-search/actions/workflows/ci.yml)
 [![CodeQL](https://img.shields.io/badge/CodeQL-required-blue)](https://github.com/faustbrian/go-search/actions/workflows/ci.yml)
 [![Coverage](https://img.shields.io/badge/coverage-100%25_required-blue)](CONTRIBUTING.md#verification)
-[![Mutation](https://img.shields.io/badge/mutation-100%25_required-blue)](CONTRIBUTING.md#verification)
+[![Mutation](https://img.shields.io/badge/mutation-local_and_scheduled-blue)](CONTRIBUTING.md#verification)
 [![Documentation](https://img.shields.io/badge/docs-checked_in_CI-blue)](docs/)
 [![Go Reference](https://pkg.go.dev/badge/github.com/faustbrian/go-search.svg)](https://pkg.go.dev/github.com/faustbrian/go-search)
 [![Release](https://img.shields.io/github/v/release/faustbrian/go-search?sort=semver)](https://github.com/faustbrian/go-search/releases)
@@ -151,12 +151,15 @@ privately through [SECURITY.md](SECURITY.md). See [examples](docs/adoption.md),
 ## Development
 
 ```sh
-make check
+GOWORK=off go test ./...
 ```
 
-The `golib` executor creates task-owned disposable Go caches for its checks.
-The module gate enforces exact statement coverage and supports race, fuzz,
-mutation, benchmark, API, and security checks.
+`make check` and `make ci` select bounded verification with the pinned public
+verifier; `make check-full` retains full assurance. The Make route includes the
+adapter's OpenSearch service and integration-tag requirements, unlike untagged
+root Go tests. See [contributor verification](CONTRIBUTING.md#verification) for
+isolated module tests, focused fuzzing, optional local mutation and real-cluster
+qualification. The executor creates task-owned disposable Go caches.
 
 For shared package families, selection guidance, ownership, and lifecycle
 vocabulary, see the versioned [v1.5.3 Golib ecosystem

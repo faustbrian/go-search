@@ -33,8 +33,15 @@ errors, truncated and oversized bodies, malformed JSON, partial shards, every
 bulk outcome class, 429/503 overload, mapping rejection, version conflicts,
 cluster blocks, credential rotation, TLS policy failures, discovery changes,
 circuit transitions, queue pressure, observer failures, and cleanup errors.
-Race, repeated stress, fuzz, exact coverage, mutation, benchmarks, security,
-API and documentation gates run independently of Docker.
+Untagged standalone Go tests use these deterministic transports without Docker.
+The manifest-aware Make `check` route still requires OpenSearch and the
+`integration` test tag; it is not the untagged route. Bounded local verification
+selects existing PIT ownership, close/release and reentrant-clock race checks.
+Repeated stress, full fuzz, exact coverage, mutation and benchmarks remain
+explicit scheduled/release assurance through `make check-full`; local mutation
+of one package is optional. Real-cluster conformance and interoperability retain
+the version matrices and budgets above, independently of routine contribution
+scope. See [contributor verification](../../../CONTRIBUTING.md#verification).
 Configuration validation also places absolute caps on in-flight admission,
 queued callers, locale analyzers, and discovery trust rules before allocating
 channels or cloning configuration collections.

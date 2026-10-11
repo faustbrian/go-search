@@ -2,8 +2,8 @@
 
 ## Before Editing
 
-1. Read [`AGENTS.md`](AGENTS.md) and the affected module's goals and docs.
-2. Run `make inventory` and the narrow baseline gate for the module.
+1. Read [`AGENTS.md`](AGENTS.md) and the affected module's docs.
+2. Run standalone Go tests in the affected module.
 3. Identify owned dependencies and reverse dependants in `modules.json`.
 4. Preserve unrelated work and generated/corpus provenance.
 
@@ -26,7 +26,8 @@ source pin is release-blocking; peer behavior cannot silently select policy.
 OpenSearch adapter changes must also update its
 [decision register](adapters/opensearch/docs/specification-decisions.md).
 
-Required mutation gates must finish with zero surviving viable mutants.
+Full scheduled and release mutation gates must finish with zero surviving viable
+mutants. Local mutation is optional, not a universal contribution prerequisite.
 
 Do not add package-local workflows, permanent replacements, machine-specific
 paths, bypass flags, broad mutation exclusions, or aggregate quality metrics
@@ -34,21 +35,51 @@ that hide a failing package.
 
 ## Verification
 
-Run during development:
+Standalone tests need no sibling checkout or ecosystem goal ledger. Run each
+intentional module independently; untagged adapter tests use deterministic
+transports, not a live engine:
+
+```bash
+GOWORK=off go test ./...
+(cd adapters/opensearch && GOWORK=off go test ./...)
+```
+
+These tests include fuzz seeds and saved corpus regressions. With the
+checksum-pinned public verifier selected by `.golib.yaml`, use:
 
 ```bash
 make inventory
 make check
-```
-
-Before submitting a repository-wide change:
-
-```bash
 make ci
 ```
 
-The full scheduled and release gate is `make ci`. Report every unavailable or
-failing command; do not describe partial results as release-ready.
+`check` and `ci` select bounded local checks. The adapter manifest still requires
+OpenSearch and the `integration` test tag: the service-aware Make route may
+require Docker and is not equivalent to the untagged commands above. Ordinary
+CI consumes the public verifier binary. The adapter's bounded race selection
+checks PIT duplicate ownership/concurrent use, idempotent release after close
+and reentrant clock callbacks without broad stress campaigns.
+
+Short active exploration selects one target; optional local mutation selects
+one package:
+
+```bash
+GOMAXPROCS=2 GOWORK=off go test -run '^$' -fuzz '^FuzzCursorDecode$' -fuzztime=2s -parallel=1 -timeout=2m .
+golib mutation --module . --package .
+```
+
+`make check-full` retains full assurance for both modules: all eight native
+fuzz campaigns, root and adapter contracts, repeated stress/leak/fault/soak,
+clean consumers, benchmarks, conformance and rolling-upgrade interoperability.
+The adapter Makefile also provides bounded `check` and explicit `check-full`.
+Backend changes retain the exact-version [real-cluster contracts](adapters/opensearch/docs/real-cluster-testing.md),
+including security, mixed-version peers and benchmark sampling. Tagged live
+tests require a disposable `OPENSEARCH_URL` and matching
+`OPENSEARCH_EXPECTED_VERSION`; never use a shared or production service.
+Public API changes retain root/adapter compatibility and direct-consumer
+checks; release rehearsal is `golib release dry-run --all`. A local pass is not
+full assurance, hosted-CI or release qualification. Report unavailable, skipped
+and failed boundaries honestly.
 
 ## Adding A Module
 

@@ -6,9 +6,12 @@ INTEGRATION_WRITE_BENCH_TIME ?= 1x
 INTEGRATION_READ_BENCH_TIME ?= 20x
 INTEGRATION_BENCH_COUNT ?= 10
 
-.PHONY: benchmark-integration check clean-consumer conformance contract docs fault image-pins integration integration-matrix interoperability leak operations rolling-upgrade safety security-matrix soak soak-integration specification-sources stress
+.PHONY: benchmark-integration check check-full clean-consumer conformance contract docs fault image-pins integration integration-matrix interoperability leak operations rolling-upgrade safety security-matrix soak soak-integration specification-sources stress
 
 check:
+	$(GOLIB) check --local --module adapters/opensearch
+
+check-full:
 	$(GOLIB) check --module adapters/opensearch
 
 contract: stress leak fault soak image-pins specification-sources operations clean-consumer safety
