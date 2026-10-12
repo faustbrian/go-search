@@ -9,6 +9,8 @@ import (
 // RequestFingerprint returns a deterministic SHA-256 binding for query
 // behavior. The opaque cursor itself is intentionally excluded so every page
 // in one traversal has the same binding.
+// This is not validation, authorization, encryption, or a proof of query
+// equivalence. Request.Validate is a separate boundary.
 func RequestFingerprint(request Request, limits Limits) (string, error) {
 	if limits.Validate() != nil || !requestInputsWithinBudget(request, limits) {
 		return "", ErrInvalidQuery

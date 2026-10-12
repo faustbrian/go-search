@@ -15,12 +15,18 @@ var (
 	// ErrClusterBlocked identifies a cluster-level write or metadata block.
 	ErrClusterBlocked = errors.New("search/opensearch: cluster is blocked")
 	// ErrRejected identifies a deterministic request rejection.
-	ErrRejected        = errors.New("search/opensearch: request was rejected")
+	ErrRejected = errors.New("search/opensearch: request was rejected")
+	// ErrVersionConflict classifies the recognized external-version rejection, without backend
+	// reason text.
 	ErrVersionConflict = errors.New("search/opensearch: external version conflict")
+	// ErrMappingRejected classifies recognized mapping rejection, without backend reason text.
 	ErrMappingRejected = errors.New("search/opensearch: document mapping was rejected")
-	ErrPITExpired      = errors.New("search/opensearch: point in time expired")
-	ErrBackpressure    = errors.New("search/opensearch: local capacity exhausted")
-	ErrCircuitOpen     = errors.New("search/opensearch: circuit is open")
+	// ErrPITExpired classifies missing or expired PIT search context.
+	ErrPITExpired = errors.New("search/opensearch: point in time expired")
+	// ErrBackpressure identifies instance-local admission exhaustion, not global backend capacity.
+	ErrBackpressure = errors.New("search/opensearch: local capacity exhausted")
+	// ErrCircuitOpen identifies instance-local circuit refusal, not proof of backend outage.
+	ErrCircuitOpen = errors.New("search/opensearch: circuit is open")
 )
 
 // Operation identifies the stable adapter operation in diagnostics.
@@ -28,22 +34,37 @@ type Operation string
 
 const (
 	// OperationInfo reads cluster identity and supported version.
-	OperationInfo         Operation = "info"
-	OperationSearch       Operation = "search"
-	OperationCreatePIT    Operation = "create_pit"
-	OperationDeletePIT    Operation = "delete_pit"
-	OperationBulk         Operation = "bulk"
-	OperationWrite        Operation = "write"
-	OperationLifecycle    Operation = "lifecycle"
-	OperationCreateIndex  Operation = "create_index"
-	OperationReindex      Operation = "reindex"
-	OperationVerifyIndex  Operation = "verify_index"
+	OperationInfo Operation = "info"
+	// OperationSearch identifies typed query execution.
+	OperationSearch Operation = "search"
+	// OperationCreatePIT identifies PIT creation.
+	OperationCreatePIT Operation = "create_pit"
+	// OperationDeletePIT identifies PIT deletion.
+	OperationDeletePIT Operation = "delete_pit"
+	// OperationBulk identifies the positional NDJSON mutation request.
+	OperationBulk Operation = "bulk"
+	// OperationWrite identifies one document mutation.
+	OperationWrite Operation = "write"
+	// OperationLifecycle identifies discovery or lifecycle policy scope.
+	OperationLifecycle Operation = "lifecycle"
+	// OperationCreateIndex identifies generation creation.
+	OperationCreateIndex Operation = "create_index"
+	// OperationReindex identifies task submission/polling.
+	OperationReindex Operation = "reindex"
+	// OperationVerifyIndex identifies semantic/count verification.
+	OperationVerifyIndex Operation = "verify_index"
+	// OperationResolveAlias identifies alias lookup.
 	OperationResolveAlias Operation = "resolve_alias"
-	OperationSwapAlias    Operation = "swap_alias"
-	OperationDeleteIndex  Operation = "delete_index"
-	OperationHealth       Operation = "health"
-	OperationCapacity     Operation = "capacity"
-	OperationTemplate     Operation = "template"
+	// OperationSwapAlias identifies atomic alias mutation.
+	OperationSwapAlias Operation = "swap_alias"
+	// OperationDeleteIndex identifies irreversible generation deletion.
+	OperationDeleteIndex Operation = "delete_index"
+	// OperationHealth identifies operator-wide health inspection.
+	OperationHealth Operation = "health"
+	// OperationCapacity identifies operator-wide capacity inspection.
+	OperationCapacity Operation = "capacity"
+	// OperationTemplate identifies composable template mutation.
+	OperationTemplate Operation = "template"
 )
 
 // FailureCategory is a stable operational classification independent of
@@ -51,27 +72,49 @@ const (
 type FailureCategory string
 
 const (
-	FailureCancelled       FailureCategory = "cancelled"
-	FailureTransport       FailureCategory = "transport"
-	FailureOverloaded      FailureCategory = "overloaded"
-	FailureClusterBlocked  FailureCategory = "cluster_blocked"
-	FailureRejected        FailureCategory = "rejected"
-	FailureMalformed       FailureCategory = "malformed_response"
+	// FailureCancelled identifies caller cancellation or deadline expiry.
+	FailureCancelled FailureCategory = "cancelled"
+	// FailureTransport identifies transport failure without raw error disclosure.
+	FailureTransport FailureCategory = "transport"
+	// FailureOverloaded identifies classified 429/503 overload.
+	FailureOverloaded FailureCategory = "overloaded"
+	// FailureClusterBlocked identifies a cluster block classification.
+	FailureClusterBlocked FailureCategory = "cluster_blocked"
+	// FailureRejected identifies other deterministic rejection.
+	FailureRejected FailureCategory = "rejected"
+	// FailureMalformed identifies invalid or incomplete response evidence.
+	FailureMalformed FailureCategory = "malformed_response"
+	// FailureVersionConflict identifies external-version conflict.
 	FailureVersionConflict FailureCategory = "version_conflict"
+	// FailureMappingRejected identifies recognized mapping rejection.
 	FailureMappingRejected FailureCategory = "mapping_rejected"
-	FailurePITExpired      FailureCategory = "pit_expired"
-	FailureBackpressure    FailureCategory = "backpressure"
-	FailureCircuitOpen     FailureCategory = "circuit_open"
+	// FailurePITExpired identifies expired/missing search context.
+	FailurePITExpired FailureCategory = "pit_expired"
+	// FailureBackpressure identifies process-local admission refusal.
+	FailureBackpressure FailureCategory = "backpressure"
+	// FailureCircuitOpen identifies process-local circuit refusal.
+	FailureCircuitOpen FailureCategory = "circuit_open"
 )
 
-// Failure is a secret-safe actionable adapter error. Code is retained only
-// when OpenSearch returns a bounded identifier; reason text is never retained.
+// Failure is mutable classified adapter error metadata. Adapter-created failures
+// exclude backend reason text and provider details, retaining only bounded codes
+// and classified causes. A mutation guard cancellation before callback execution
+// retains the guard error chain through Unwrap, so that chain must be secret-free.
+// Public literals/field mutation do not receive adapter redaction guarantees, and
+// Retryable is advice rather than permission to replay mutations.
 type Failure struct {
-	Operation    Operation
-	Category     FailureCategory
-	Status       int
-	Code         string
-	Retryable    bool
+	// Operation identifies the adapter request category.
+	Operation Operation
+	// Category is the stable classification, not raw backend reason text.
+	Category FailureCategory
+	// Status is the observed HTTP status, or zero without response evidence.
+	Status int
+	// Code is the adapter-sanitized backend identifier; public assignments are not sanitized.
+	Code string
+	// Retryable indicates classified retry potential; callers still own ambiguity reconciliation.
+	Retryable bool
+	// OutcomeKnown states whether receipt is classified as known, not whether the mutation
+	// succeeded.
 	OutcomeKnown bool
 	cause        error
 }
@@ -88,6 +131,8 @@ func unknownMalformedFailure(operation Operation, cause error) *Failure {
 	return failure
 }
 
+// Error formats operation/category/status/code without private cause text.
+// Publicly mutated fields are formatted verbatim and must not contain secrets.
 func (failure *Failure) Error() string {
 	message := fmt.Sprintf("search/opensearch: %s failed (%s", failure.Operation, failure.Category)
 	if failure.Status != 0 {
@@ -100,6 +145,10 @@ func (failure *Failure) Error() string {
 	return message + ")"
 }
 
+// Unwrap exposes the retained cause for errors.Is/errors.As. Provider/transport
+// details are reduced to owned classifications, but a pre-callback mutation guard
+// error wrapping cancellation/deadline is retained as supplied. Do not log that
+// chain without application sanitization; Error itself omits private cause text.
 func (failure *Failure) Unwrap() error { return failure.cause }
 
 func cancelledFailure(operation Operation, cause error) *Failure {

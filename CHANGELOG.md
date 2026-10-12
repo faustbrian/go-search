@@ -4,6 +4,12 @@ All notable changes to this module are documented here.
 
 ## Unreleased
 
+### Documentation
+
+- Clarify mutable input versus constructor-owned copies, cursor authentication
+  and resource ownership, callback cooperation, and reconciliation divergence
+  without changing executable behavior.
+
 ## 1.1.0 - 2026-10-06
 
 ### Changed

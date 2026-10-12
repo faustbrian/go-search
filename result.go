@@ -10,46 +10,84 @@ import (
 	"unicode/utf8"
 )
 
+// ErrInvalidResult rejects inconsistent hit/JSON/diagnostic shape, not all possible backend
+// protocol violations.
 var ErrInvalidResult = errors.New("search: invalid backend result")
 
+// TotalRelation states whether a backend count is exact or a lower bound.
 type TotalRelation string
 
 const (
-	TotalExact      TotalRelation = "eq"
+	// TotalExact denotes an exact backend hit count.
+	TotalExact TotalRelation = "eq"
+	// TotalLowerBound denotes a lower-bound count, not total traversal completeness.
 	TotalLowerBound TotalRelation = "gte"
 )
 
+// Total is backend count evidence, which must not be smaller than returned hits.
 type Total struct {
-	Value    uint64
+	// Value is the backend hit count or lower bound.
+	Value uint64
+	// Relation qualifies Value as exact or a lower bound.
 	Relation TotalRelation
 }
 
-// Hit owns all returned bytes and slices. Score is backend-provided relevance
+// Hit is a mutable hit description. Result constructors/accessors copy its
+// nested bytes, slices, maps, and score pointer. Score is backend-provided relevance
 // and is intentionally not claimed to be portable across adapters.
 type Hit struct {
-	Index      string
-	ID         string
-	Version    uint64
-	Score      *float64
-	Source     json.RawMessage
+	// Index is the adapter-attributed logical index identity.
+	Index string
+	// ID is the document identity.
+	ID string
+	// Version is positive backend external-version evidence.
+	Version uint64
+	// Score is optional backend relevance, not comparable across adapters.
+	Score *float64
+	// Source is returned JSON; shaping, byte bounds, and disclosure are adapter responsibilities.
+	Source json.RawMessage
+	// SortValues is the ordered JSON tuple used for continuation.
 	SortValues []json.RawMessage
+	// Highlights is field-to-fragment data; render as untrusted content, not safe HTML.
 	Highlights map[string][]string
 }
 
+// Failure is a shared partial-result diagnostic. Its text is not automatically redacted.
 type Failure struct {
+	// Scope and Code classify the failure; Message is caller-supplied text that may contain
+	// sensitive data.
 	Scope, Code, Message string
-	Retryable            bool
+	// Retryable is backend advice, not an automatic retry policy.
+	Retryable bool
 }
-type ShardDiagnostics struct{ Total, Successful, Skipped, Failed int }
+
+// ShardDiagnostics records backend shard counts, not replica durability or whole-cluster
+// health.
+type ShardDiagnostics struct {
+	// Total, Successful, Skipped, and Failed describe shard participation and must be
+	// internally consistent.
+	Total, Successful, Skipped, Failed int
+}
+
+// Diagnostics preserves backend timing and partial-result evidence; consumers must inspect
+// Partial.
 type Diagnostics struct {
-	Backend   string
+	// Backend is a bounded nonempty backend identifier.
+	Backend string
+	// RequestID is an optional bounded diagnostic identifier.
 	RequestID string
-	Took      time.Duration
-	TimedOut  bool
-	Partial   bool
-	Shards    ShardDiagnostics
-	Failures  []Failure
-	Warnings  []string
+	// Took is nonnegative backend-reported duration, not client end-to-end time.
+	Took time.Duration
+	// TimedOut indicates backend timeout and requires Partial.
+	TimedOut bool
+	// Partial marks incomplete execution; false is not a persistence or full-cluster guarantee.
+	Partial bool
+	// Shards reports internally consistent shard counts.
+	Shards ShardDiagnostics
+	// Failures retains independently copied classifications in a Result.
+	Failures []Failure
+	// Warnings retains copied text; the constructor does not redact it.
+	Warnings []string
 }
 
 // Result retains partial-result diagnostics rather than converting a successful
@@ -63,6 +101,9 @@ type Result struct {
 	nextCursor   string
 }
 
+// NewResult validates hit identities, positive versions, finite scores, JSON values,
+// and diagnostic consistency, then deeply copies retained mutable data. It has no
+// Limits parameter: byte/count/depth admission and privacy remain adapter concerns.
 func NewResult(hits []Hit, total Total, aggregations, suggestions map[string]json.RawMessage, diagnostics Diagnostics, nextCursor string) (Result, error) {
 	if total.Relation != TotalExact && total.Relation != TotalLowerBound || total.Value < uint64(len(hits)) {
 		return Result{}, ErrInvalidResult
@@ -137,6 +178,7 @@ func validDiagnosticText(value string) bool {
 	return len(value) <= DefaultLimits().MaxSourceBytes && utf8.ValidString(value) && !strings.ContainsRune(value, '\x00')
 }
 
+// Hits returns independently copied nested hit data and score pointers.
 func (r Result) Hits() []Hit {
 	result := make([]Hit, len(r.hits))
 	for index, hit := range r.hits {
@@ -144,11 +186,21 @@ func (r Result) Hits() []Hit {
 	}
 	return result
 }
-func (r Result) Total() Total                             { return r.total }
+
+// Total returns backend count evidence by value.
+func (r Result) Total() Total { return r.total }
+
+// Aggregations returns an independent map and JSON byte copies.
 func (r Result) Aggregations() map[string]json.RawMessage { return cloneRawMap(r.aggregations) }
-func (r Result) Suggestions() map[string]json.RawMessage  { return cloneRawMap(r.suggestions) }
-func (r Result) Diagnostics() Diagnostics                 { return cloneDiagnostics(r.diagnostics) }
-func (r Result) NextCursor() string                       { return r.nextCursor }
+
+// Suggestions returns an independent map and JSON byte copies.
+func (r Result) Suggestions() map[string]json.RawMessage { return cloneRawMap(r.suggestions) }
+
+// Diagnostics returns an independent copy of failure and warning slices.
+func (r Result) Diagnostics() Diagnostics { return cloneDiagnostics(r.diagnostics) }
+
+// NextCursor returns opaque continuation bytes without validating or consuming them.
+func (r Result) NextCursor() string { return r.nextCursor }
 
 func cloneHit(hit Hit) Hit {
 	hit.Source = append(json.RawMessage(nil), hit.Source...)
@@ -186,6 +238,10 @@ func cloneDiagnostics(value Diagnostics) Diagnostics {
 
 // Searcher is the context-aware query boundary implemented by adapters.
 type Searcher interface {
+	// Capabilities reports supported semantics or an operation error; false features must not
+	// silently degrade.
 	Capabilities(context.Context) (Capabilities, error)
+	// Search executes one typed request and retains partial-result diagnostics; callers own
+	// policy and continuation handling.
 	Search(context.Context, Request) (Result, error)
 }

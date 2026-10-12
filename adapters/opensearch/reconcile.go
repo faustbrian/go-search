@@ -8,12 +8,18 @@ import (
 	"github.com/faustbrian/go-search"
 )
 
+// ReconciliationPITKeepAlive requests a two-minute PIT deadline; smaller configured
+// cursor limits reject Read rather than silently changing this request.
 const ReconciliationPITKeepAlive = 2 * time.Minute
 
+// ErrPartialResults identifies a partial cursor search, which cannot advance reconciliation
+// safely.
 var ErrPartialResults = errors.New("search/opensearch: partial results cannot be reconciled")
 
 // Read implements search.ReconciliationReader with a stable ID-ordered PIT
-// projection. Sources are hashed locally and are not retained in diagnostics.
+// projection. Partial cursor results are refused; source digests are calculated
+// locally and source bytes are not retained in records or diagnostics. A full page
+// retains a PIT continuation, so abandoned readers rely on expiry/application policy.
 func (c *Client) Read(ctx context.Context, tenant, index, cursor string, pageSize int) (search.ReconciliationPage, error) {
 	result, err := c.Search(ctx, search.Request{
 		Tenant: tenant, Index: index, Query: search.MatchAllQuery{},

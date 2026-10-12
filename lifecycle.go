@@ -11,100 +11,195 @@ import (
 )
 
 var (
-	ErrInvalidMigrator       = errors.New("search: lifecycle dependencies are required")
-	ErrInvalidMigrationPlan  = errors.New("search: invalid migration plan")
-	ErrMigrationNotFound     = errors.New("search: migration state not found")
-	ErrMigrationIncomplete   = errors.New("search: migration remains resumable")
-	ErrMigrationPlanChanged  = errors.New("search: migration plan changed after execution began")
+	// ErrInvalidMigrator requires nonnil dependencies and a store implementing
+	// MigrationCoordinator.
+	ErrInvalidMigrator = errors.New("search: lifecycle dependencies are required")
+	// ErrInvalidMigrationPlan rejects invalid or unbound generation identities and per-call
+	// step limits.
+	ErrInvalidMigrationPlan = errors.New("search: invalid migration plan")
+	// ErrMigrationNotFound is the store sentinel for absence, which Run treats as pending work.
+	ErrMigrationNotFound = errors.New("search: migration state not found")
+	// ErrMigrationIncomplete indicates exhausted per-call reindex steps with a resumable
+	// checkpoint.
+	ErrMigrationIncomplete = errors.New("search: migration remains resumable")
+	// ErrMigrationPlanChanged rejects persisted identity/fingerprint mismatch; it does not
+	// reset state.
+	ErrMigrationPlanChanged = errors.New("search: migration plan changed after execution began")
+	// ErrMigrationVerification rejects unverified or nonzero-drift backend attestation.
 	ErrMigrationVerification = errors.New("search: migration verification failed")
-	ErrMigrationRecovery     = errors.New("search: migration requires application-owned recovery before retry")
-	ErrAliasChanged          = errors.New("search: alias no longer identifies the expected generation")
+	// ErrMigrationRecovery refuses ambiguous intent phases until application-owned recovery
+	// repairs the checkpoint.
+	ErrMigrationRecovery = errors.New("search: migration requires application-owned recovery before retry")
+	// ErrAliasChanged refuses alias state that no longer matches the expected physical generation.
+	ErrAliasChanged = errors.New("search: alias no longer identifies the expected generation")
+	// ErrInvalidMigrationPhase rejects a checkpoint phase or cursor invalid for the requested
+	// lifecycle action.
 	ErrInvalidMigrationPhase = errors.New("search: operation is invalid for migration phase")
+	// ErrMigrationCoordination identifies omitted, repeated, or incomplete coordinator
+	// callback execution.
 	ErrMigrationCoordination = errors.New("search: migration coordination contract was violated")
 )
 
+// MigrationPhase records a durable lifecycle checkpoint. Dispatch-intent phases require
+// application recovery after ambiguity.
 type MigrationPhase string
 
 const (
-	MigrationPending     MigrationPhase = "pending"
-	MigrationCreating    MigrationPhase = "creating"
-	MigrationCreated     MigrationPhase = "created"
+	// MigrationPending has not begun creation.
+	MigrationPending MigrationPhase = "pending"
+	// MigrationCreating checkpoints create intent; restart requires recovery.
+	MigrationCreating MigrationPhase = "creating"
+	// MigrationCreated records acknowledged target creation.
+	MigrationCreated MigrationPhase = "created"
+	// MigrationDispatching checkpoints task submission intent; restart requires recovery.
 	MigrationDispatching MigrationPhase = "reindex_dispatching"
-	MigrationReindexing  MigrationPhase = "reindexing"
-	MigrationReindexed   MigrationPhase = "reindexed"
-	MigrationVerified    MigrationPhase = "verified"
-	MigrationComplete    MigrationPhase = "complete"
-	MigrationRolledBack  MigrationPhase = "rolled_back"
-	MigrationCleaning    MigrationPhase = "cleaning"
-	MigrationCleaned     MigrationPhase = "cleaned"
+	// MigrationReindexing records a durable task continuation.
+	MigrationReindexing MigrationPhase = "reindexing"
+	// MigrationReindexed records backend task completion, not semantic verification.
+	MigrationReindexed MigrationPhase = "reindexed"
+	// MigrationVerified records verification before fresh fenced cutover.
+	MigrationVerified MigrationPhase = "verified"
+	// MigrationComplete records successful cutover checkpoint.
+	MigrationComplete MigrationPhase = "complete"
+	// MigrationRolledBack records successful reverse cutover.
+	MigrationRolledBack MigrationPhase = "rolled_back"
+	// MigrationCleaning checkpoints deletion intent; restart requires recovery.
+	MigrationCleaning MigrationPhase = "cleaning"
+	// MigrationCleaned records deletion completion and is terminal.
+	MigrationCleaned MigrationPhase = "cleaned"
 )
 
+// LifecycleOperation identifies the separately authorized/observed migration step.
 type LifecycleOperation string
 
 const (
-	LifecycleCreate   LifecycleOperation = "create"
-	LifecycleReindex  LifecycleOperation = "reindex"
-	LifecycleVerify   LifecycleOperation = "verify"
-	LifecycleCutover  LifecycleOperation = "cutover"
+	// LifecycleCreate authorizes/observes physical generation creation.
+	LifecycleCreate LifecycleOperation = "create"
+	// LifecycleReindex authorizes/observes task dispatch or polling.
+	LifecycleReindex LifecycleOperation = "reindex"
+	// LifecycleVerify authorizes/observes semantic verification.
+	LifecycleVerify LifecycleOperation = "verify"
+	// LifecycleCutover authorizes/observes forward alias movement.
+	LifecycleCutover LifecycleOperation = "cutover"
+	// LifecycleRollback authorizes/observes reverse verified alias movement.
 	LifecycleRollback LifecycleOperation = "rollback"
-	LifecycleCleanup  LifecycleOperation = "cleanup"
+	// LifecycleCleanup authorizes/observes irreversible inactive-generation deletion.
+	LifecycleCleanup LifecycleOperation = "cleanup"
 )
 
+// MigrationPlan binds immutable generation identities. MaxReindexSteps is a per-call
+// polling budget, excluded from its identity fingerprint.
 type MigrationPlan struct {
-	ID                string
-	Tenant            string
-	Alias             string
-	SourceIndex       string
+	// ID is the stable durable migration identity.
+	ID string
+	// Tenant is the application scope presented to dependencies.
+	Tenant string
+	// Alias is distinct from both physical generations.
+	Alias string
+	// SourceIndex is the retained prior physical generation.
+	SourceIndex string
+	// SourceFingerprint is the lowercase SHA-256 definition identity used for rollback.
 	SourceFingerprint string
-	Target            IndexDefinition
-	MaxReindexSteps   int
+	// Target is a validated immutable target definition.
+	Target IndexDefinition
+	// MaxReindexSteps bounds polls per Run, not total task lifetime; it may change between
+	// resumptions.
+	MaxReindexSteps int
 }
 
+// VerificationReport is backend evidence; counts alone do not prove semantic equivalence.
 type VerificationReport struct {
-	Verified    bool
+	// Verified is the backend semantic attestation; the core also requires zero Drift.
+	Verified bool
+	// SourceCount is observed source cardinality.
 	SourceCount uint64
+	// TargetCount is observed target cardinality.
 	TargetCount uint64
-	Drift       uint64
+	// Drift is backend-reported semantic difference count.
+	Drift uint64
 }
 
+// MigrationState is application-persisted workflow state, not an atomic transaction with
+// backend effects.
 type MigrationState struct {
-	ID              string
+	// ID binds the checkpoint to the plan.
+	ID string
+	// PlanFingerprint binds generation identities, excluding the per-run poll budget.
 	PlanFingerprint string
-	Phase           MigrationPhase
-	ReindexCursor   string
-	Verification    VerificationReport
+	// Phase is the last saved workflow checkpoint.
+	Phase MigrationPhase
+	// ReindexCursor is sensitive opaque backend continuation data owned by the checkpoint store.
+	ReindexCursor string
+	// Verification retains the last semantic verification report.
+	Verification VerificationReport
 }
 
+// LifecycleIntent describes one application authorization decision before a backend step.
 type LifecycleIntent struct {
+	// MigrationID identifies the workflow; Tenant and Resource are sensitive application
+	// authorization scope.
 	MigrationID, Tenant, Resource string
-	Operation                     LifecycleOperation
+	// Operation identifies the requested step.
+	Operation LifecycleOperation
 }
+
+// LifecycleEvent is emitted after saving a checkpoint; observer failure does not roll back
+// that saved state.
 type LifecycleEvent struct {
+	// MigrationID identifies the workflow; Tenant and Resource are sensitive checkpoint scope,
+	// not safe metric labels.
 	MigrationID, Tenant, Resource string
-	Operation                     LifecycleOperation
-	Phase                         MigrationPhase
+	// Operation identifies the saved step.
+	Operation LifecycleOperation
+	// Phase identifies the saved checkpoint.
+	Phase MigrationPhase
 }
 
 // LifecycleCleanupRequest binds irreversible deletion to the exact migration,
 // active generation, inactive generation, and immutable definitions whose
 // final eligibility must be proven under one durable exclusion boundary.
 type LifecycleCleanupRequest struct {
-	MigrationID                        string
-	Tenant, Alias                      string
-	ActiveIndex, ActiveFingerprint     string
+	// MigrationID is the durable workflow identity.
+	MigrationID string
+	// Tenant scopes application policy; Alias must identify the active generation.
+	Tenant, Alias string
+	// ActiveIndex and ActiveFingerprint identify the retained live generation.
+	ActiveIndex, ActiveFingerprint string
+	// InactiveIndex and InactiveFingerprint identify the exact generation eligible for
+	// irreversible deletion.
 	InactiveIndex, InactiveFingerprint string
 }
 
+// LifecycleBackend implements the backend steps, including fresh semantic attestation and
+// application-fenced mutations.
+// The core delegates these obligations; it cannot independently prove durable exclusion or
+// backend completion.
 type LifecycleBackend interface {
+	// CreateIndex creates the authorized definition; ambiguous receipt requires recovery
+	// rather than blind resubmission.
 	CreateIndex(context.Context, string, IndexDefinition) error
+	// Reindex submits or polls an explicit task; a nonfinal result must return a durable cursor.
 	Reindex(context.Context, string, string, string, string) (cursor string, done bool, err error)
+	// VerifyIndex compares complete bounded generation semantics and attests the expected live
+	// definition.
 	VerifyIndex(context.Context, string, string, string, string) (VerificationReport, error)
+	// ResolveAlias returns the single physical generation currently selected by the logical alias.
 	ResolveAlias(context.Context, string, string) (string, error)
+	// CutoverAlias must freshly verify under continuous application write quiescence and
+	// atomically move the alias.
 	CutoverAlias(context.Context, string, string, string, string, string) (VerificationReport, error)
+	// CleanupIndex must delete only while the complete durable final-eligibility fence remains
+	// held.
 	CleanupIndex(context.Context, LifecycleCleanupRequest) error
 }
+
+// MigrationStore owns durable checkpoints and must also implement MigrationCoordinator for
+// NewMigrator.
 type MigrationStore interface {
+	// Load retrieves one checkpoint or reports ErrMigrationNotFound; the store owns durable
+	// isolation.
 	Load(context.Context, string) (MigrationState, error)
+	// Save persists the checkpoint; failures can follow already completed backend effects.
 	Save(context.Context, MigrationState) error
 }
 
@@ -114,15 +209,28 @@ type MigrationStore interface {
 // The boundary intentionally spans backend I/O so cleanup, rollback, cutover,
 // and reindex dispatch cannot race one another.
 type MigrationCoordinator interface {
+	// WithMigration invokes the operation synchronously exactly once under durable
+	// cross-instance exclusion until return.
 	WithMigration(context.Context, string, func(context.Context) error) error
 }
+
+// LifecycleAuthorizer approves a migration step synchronously; policy errors are returned
+// without core redaction.
 type LifecycleAuthorizer interface {
+	// Authorize approves the scoped step or returns an error before that step is dispatched.
 	Authorize(context.Context, LifecycleIntent) error
 }
+
+// LifecycleObserver records saved checkpoints synchronously; it may receive sensitive
+// tenant/resource identities.
 type LifecycleObserver interface {
+	// Record observes an already saved checkpoint; failure aborts Run but cannot undo the save.
 	Record(context.Context, LifecycleEvent) error
 }
 
+// Migrator borrows backend, store, authorization, and observer implementations.
+// Calls are synchronous; durable coordination, panic safety, cancellation, and shutdown
+// remain dependency/application responsibilities.
 type Migrator struct {
 	backend     LifecycleBackend
 	store       MigrationStore
@@ -131,6 +239,9 @@ type Migrator struct {
 	observer    LifecycleObserver
 }
 
+// NewMigrator borrows nonnil dependencies and requires the store to implement
+// MigrationCoordinator. It does not qualify their durability, typed-nil safety,
+// callback cooperation, authorization correctness, or backend atomicity.
 func NewMigrator(backend LifecycleBackend, store MigrationStore, authorizer LifecycleAuthorizer, observer LifecycleObserver) (*Migrator, error) {
 	if backend == nil || store == nil || authorizer == nil || observer == nil {
 		return nil, ErrInvalidMigrator
@@ -143,7 +254,9 @@ func NewMigrator(backend LifecycleBackend, store MigrationStore, authorizer Life
 }
 
 // Run resumes an explicit create, reindex, verify, and atomic alias-cutover
-// workflow. Each completed external step is persisted before the next begins.
+// workflow under store-owned durable exclusion. Intent checkpoints precede
+// ambiguous create/reindex/delete effects; saved completion and observer errors
+// are not transactions with backend I/O. Recovery is application-owned.
 func (m *Migrator) Run(ctx context.Context, plan MigrationPlan) (MigrationState, error) {
 	return coordinateMigration(ctx, m.coordinator, plan.ID, func(operationCtx context.Context) (MigrationState, error) {
 		return m.run(operationCtx, plan)
@@ -392,6 +505,8 @@ func (m *Migrator) cleanup(ctx context.Context, plan MigrationPlan) (MigrationSt
 	return state, nil
 }
 
+// Detect omitted/repeated/late completion, but do not mistake callback-count
+// checks for proof that a coordinator holds a durable cross-instance fence.
 func coordinateMigration[T any](ctx context.Context, coordinator MigrationCoordinator, id string, operation func(context.Context) (T, error)) (T, error) {
 	type migrationOutcome struct {
 		result T

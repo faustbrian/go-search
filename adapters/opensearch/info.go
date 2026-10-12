@@ -28,10 +28,14 @@ var (
 
 // ClusterInfo is the bounded identity needed for compatibility and diagnostics.
 type ClusterInfo struct {
-	Node        string
-	Cluster     string
+	// Node is a bounded server node name and may be sensitive operator metadata.
+	Node string
+	// Cluster is the bounded server cluster name, not a tenant label.
+	Cluster string
+	// ClusterUUID is server identity evidence, not a trusted authority certificate.
 	ClusterUUID string
-	Version     string
+	// Version is the server-reported version string, not a compatibility qualification.
+	Version string
 }
 
 // Info reads the OpenSearch root identity without retaining the response body.
@@ -139,8 +143,10 @@ func readBounded(reader io.Reader, maximum int64) ([]byte, error) {
 
 type statusError struct{ status int }
 
+// Error includes only the owned classification and HTTP status, not response bodies.
 func (err *statusError) Error() string {
 	return fmt.Sprintf("%s: HTTP %d", ErrUnexpectedStatus, err.status)
 }
 
+// Unwrap exposes ErrUnexpectedStatus for errors.Is without private transport causes.
 func (err *statusError) Unwrap() error { return ErrUnexpectedStatus }

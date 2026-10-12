@@ -20,6 +20,9 @@ func (transport fuzzResponseTransport) RoundTrip(*http.Request) (*http.Response,
 	return &http.Response{StatusCode: http.StatusOK, Header: make(http.Header), Body: io.NopCloser(strings.NewReader(transport.body))}, nil
 }
 
+// FuzzInfoResponseBoundary supplies at most 8192 synthetic body bytes to the
+// 4096-byte Info decoder bound. It checks panic resistance with no network service;
+// known malformed/sanitization outcomes remain deterministic-test assertions.
 func FuzzInfoResponseBoundary(f *testing.F) {
 	f.Add(`{"name":"node","cluster_name":"cluster","cluster_uuid":"uuid","version":{"number":"3.2.0"}}`)
 	f.Add(`{}`)
@@ -36,6 +39,9 @@ func FuzzInfoResponseBoundary(f *testing.F) {
 	})
 }
 
+// FuzzSearchResponseBoundary supplies bounded synthetic response bytes to an
+// authorized offset search with a 4096-byte response cap. It checks panic resistance
+// at translation/decode, not real-server ranking or cursor/PIT interoperability.
 func FuzzSearchResponseBoundary(f *testing.F) {
 	f.Add(`{"took":1,"timed_out":false,"_shards":{"total":1,"successful":1,"skipped":0,"failed":0},"hits":{"total":{"value":0,"relation":"eq"},"hits":[]}}`)
 	f.Add(`{"hits":{"total":{"value":18446744073709551616,"relation":"eq"},"hits":[{"_source":{"secret":"credential"}}]}}`)
@@ -53,6 +59,9 @@ func FuzzSearchResponseBoundary(f *testing.F) {
 	})
 }
 
+// FuzzBulkResponseBoundary probes bounded synthetic positional bulk responses.
+// It requires enabled write admission and validates request attribution whenever
+// Bulk accepts a response; it does not prove backend receipt or retry safety.
 func FuzzBulkResponseBoundary(f *testing.F) {
 	f.Add(`{"took":1,"errors":false,"items":[{"index":{"_index":"documents-v1","_id":"id","_version":1,"status":201,"result":"created"}}]}`)
 	f.Add(`{"took":-1,"errors":false,"items":[]}`)
@@ -80,6 +89,10 @@ func FuzzBulkResponseBoundary(f *testing.F) {
 	})
 }
 
+// FuzzLifecycleResponseBoundary constructs bounded synthetic lifecycle responses.
+// The supplied configuration currently lacks MutationGuard, so CreateIndex can
+// refuse before response decoding. This target alone is not decoder exploration;
+// lifecycle malformed-response cases require their deterministic evidence.
 func FuzzLifecycleResponseBoundary(f *testing.F) {
 	f.Add(`{"acknowledged":true,"shards_acknowledged":true}`)
 	f.Add(`{"acknowledged":true,"shards_acknowledged":false}`)
@@ -98,6 +111,9 @@ func FuzzLifecycleResponseBoundary(f *testing.F) {
 	})
 }
 
+// fuzzSearchClient owns a deterministic borrowed synthetic transport and cleanup.
+// Search/write authorization permits reaching those decoders; lifecycle policies
+// are retained as supplied rather than silently adding a durable mutation guard.
 func fuzzSearchClient(t *testing.T, body string, lifecycle *adapter.LifecycleConfig) *adapter.Client {
 	t.Helper()
 	codec, err := search.NewCursorCodec([]byte("0123456789abcdef0123456789abcdef"), time.Now, 4096)

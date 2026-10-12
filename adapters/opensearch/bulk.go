@@ -11,7 +11,10 @@ import (
 )
 
 // Bulk applies one bounded single-tenant mutation unit. It never retries and
-// always attributes a returned item to its original operation position.
+// attributes returned items to original positions and bounds final NDJSON bytes.
+// Items are not a transaction; unknown receipt returns attributed Unknown items
+// alongside an error. Authorization covers copied source before all resolution;
+// Retryable never authorizes a blind new-version retry.
 func (c *Client) Bulk(ctx context.Context, request search.BulkRequest) (search.BulkResult, error) {
 	if ctx == nil {
 		return search.BulkResult{}, ErrContextRequired
@@ -86,6 +89,8 @@ func encodeBulkRequest(operations []search.WriteOperation, targets []IndexTarget
 	return body.Bytes()
 }
 
+// Validate both positional and physical-generation attribution; a successful
+// HTTP response or matching item count alone cannot prove request ownership.
 func decodeBulkResponse(operations []search.WriteOperation, body []byte, expectedTargets ...[]IndexTarget) (search.BulkResult, error) {
 	type responseItem struct {
 		Index   string `json:"_index"`

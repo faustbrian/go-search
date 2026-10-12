@@ -4,11 +4,12 @@ Offset pagination is bounded and targets the resolved read alias directly. Use
 it only for shallow, non-snapshot result windows.
 
 Cursor pagination uses an OpenSearch point in time (PIT) plus `search_after`.
-The final sort must be stable and end in `_id`. The signed cursor binds tenant,
+The shared final sort must be stable and end in `search.DocumentIDSortField`;
+the adapter translates that virtual field to backend `_id`. The signed cursor binds tenant,
 logical index, normalized request fingerprint, physical mapping fingerprint,
 PIT ID, sort values, page/item/byte totals, and expiry. A cursor from another
 tenant, query, index generation, or signing key is rejected before search.
-After PIT creation is acknowledged, the cursor codec fixes an absolute deadline
+Before PIT creation is dispatched, the cursor codec fixes an absolute deadline
 bounded by `Limits.MaxCursorDuration`. The codec clock is authoritative; the
 deprecated adapter `SearchConfig.Clock` is ignored. Time spent querying and
 consuming pages uses that budget. Every continuation sends only the whole-

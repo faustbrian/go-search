@@ -27,19 +27,29 @@ var (
 type ValueKind uint8
 
 const (
+	// KindNull represents explicit JSON null and is the zero kind.
 	KindNull ValueKind = iota
+	// KindString retains text without Unicode normalization.
 	KindString
+	// KindNumber retains bounded decimal spelling without binary floating-point conversion.
 	KindNumber
+	// KindBool represents JSON true or false.
 	KindBool
+	// KindTime encodes a UTC RFC3339Nano string.
 	KindTime
+	// KindGeo encodes latitude and longitude coordinates.
 	KindGeo
+	// KindArray retains an independently copied sequence of Values.
 	KindArray
+	// KindObject retains an independently copied name-to-Value map.
 	KindObject
 )
 
 // GeoPoint is a WGS84 latitude and longitude pair.
 type GeoPoint struct {
-	Latitude  float64
+	// Latitude is a finite degree coordinate in [-90, 90] for GeoValue.
+	Latitude float64
+	// Longitude is a finite degree coordinate in [-180, 180] for GeoValue.
 	Longitude float64
 }
 
@@ -56,15 +66,14 @@ type Value struct {
 	object map[string]Value
 }
 
-// NullValue returns an explicit null value.
+// NullValue returns explicit JSON null; an absent object key is different.
 func NullValue() Value { return Value{kind: KindNull} }
 
-// StringValue returns a Unicode string value. Empty strings remain distinct
-// from null and missing fields.
+// StringValue retains text as supplied. UTF-8 validity is checked on JSON encoding.
 func StringValue(value string) Value { return Value{kind: KindString, text: value} }
 
-// NumberValue parses a bounded, exact base-10 number without converting it to
-// binary floating point.
+// NumberValue accepts at most 256 bytes of decimal JSON syntax without an exponent.
+// It preserves spelling, including negative zero, and rejects leading-zero integers.
 func NumberValue(value string) (Value, error) {
 	if len(value) == 0 || len(value) > MaxNumberBytes || !exactNumberPattern.MatchString(value) {
 		return Value{}, errInvalidNumber
@@ -73,15 +82,16 @@ func NumberValue(value string) (Value, error) {
 	return Value{kind: KindNumber, text: value}, nil
 }
 
-// BoolValue returns a Boolean value.
+// BoolValue returns a JSON boolean.
 func BoolValue(value bool) Value { return Value{kind: KindBool, truth: value} }
 
-// TimeValue returns a timestamp normalized to UTC while retaining nanoseconds.
+// TimeValue formats the supplied time in UTC with RFC3339Nano; it does not validate an
+// application time range.
 func TimeValue(value time.Time) Value {
 	return Value{kind: KindTime, text: value.UTC().Format(time.RFC3339Nano)}
 }
 
-// GeoValue validates and returns a WGS84 point.
+// GeoValue rejects nonfinite or out-of-range degree coordinates.
 func GeoValue(latitude, longitude float64) (Value, error) {
 	if math.IsNaN(latitude) || math.IsInf(latitude, 0) || latitude < -90 || latitude > 90 ||
 		math.IsNaN(longitude) || math.IsInf(longitude, 0) || longitude < -180 || longitude > 180 {
@@ -91,21 +101,21 @@ func GeoValue(latitude, longitude float64) (Value, error) {
 	return Value{kind: KindGeo, point: GeoPoint{Latitude: latitude, Longitude: longitude}}, nil
 }
 
-// ArrayValue copies the supplied values and returns an array value.
+// ArrayValue recursively copies values. It applies no Limits budget; nil encodes as null.
 func ArrayValue(values []Value) Value {
 	return Value{kind: KindArray, array: cloneValues(values)}
 }
 
-// ObjectValue copies the supplied fields and returns a nested object value.
+// ObjectValue recursively copies fields. It applies no Limits budget; nil encodes as null.
 func ObjectValue(fields map[string]Value) Value {
 	return Value{kind: KindObject, object: cloneFields(fields)}
 }
 
-// Kind reports the value's representation.
+// Kind returns the retained discriminator; the zero Value has KindNull.
 func (v Value) Kind() ValueKind { return v.kind }
 
-// MarshalJSON implements json.Marshaler without converting exact numbers to
-// float64.
+// MarshalJSON rejects invalid UTF-8 recursively and encodes the retained representation.
+// It imposes no size/depth budget and does not redact values.
 func (v Value) MarshalJSON() ([]byte, error) {
 	if !validUTF8Value(v) {
 		return nil, errors.New("search: value contains invalid UTF-8")

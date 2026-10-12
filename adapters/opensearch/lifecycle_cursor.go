@@ -28,10 +28,20 @@ var (
 )
 
 var (
-	ErrInvalidReindexCursorCodec    = errors.New("search/opensearch: reindex cursor codec is invalid")
-	ErrInvalidReindexCursor         = errors.New("search/opensearch: reindex cursor is invalid")
-	ErrReindexCursorBinding         = errors.New("search/opensearch: reindex cursor belongs to another lifecycle operation")
-	ErrReindexCursorExpired         = errors.New("search/opensearch: reindex cursor expired")
+	// ErrInvalidReindexCursorCodec rejects key/clock/token/TTL configuration outside
+	// constructor bounds.
+	ErrInvalidReindexCursorCodec = errors.New("search/opensearch: reindex cursor codec is invalid")
+	// ErrInvalidReindexCursor rejects malformed, unauthenticated, noncanonical, unsafe, or
+	// oversized task continuation.
+	ErrInvalidReindexCursor = errors.New("search/opensearch: reindex cursor is invalid")
+	// ErrReindexCursorBinding rejects tenant/physical-source/physical-target mismatch, not
+	// migration-ID reuse.
+	ErrReindexCursorBinding = errors.New("search/opensearch: reindex cursor belongs to another lifecycle operation")
+	// ErrReindexCursorExpired rejects task continuation after its token deadline; the server
+	// task may still run.
+	ErrReindexCursorExpired = errors.New("search/opensearch: reindex cursor expired")
+	// ErrLifecycleCursorCodecRequired requires an explicit encrypted task continuation codec
+	// before reindex submission/polling.
 	ErrLifecycleCursorCodecRequired = errors.New("search/opensearch: reindex cursor codec is required")
 )
 
@@ -46,7 +56,11 @@ type reindexCursorEnvelope struct {
 
 // ReindexCursorCodec encrypts bounded backend task identifiers and binds them to
 // one tenant and physical source/target pair. It is safe for concurrent use
-// when the supplied clock is concurrency-safe.
+// when the supplied clock is prompt, concurrency-safe, and non-panicking.
+// The encrypted payload binds tenant/source/target/task and expiry, not a migration
+// ID. Incomplete polls issue a fresh expiry; token replay within its lease is not
+// consumed. Nonces come from crypto/rand; caller secret generation/rotation and
+// server-task lifecycle remain application-owned.
 type ReindexCursorCodec struct {
 	aead     cipher.AEAD
 	random   io.Reader
@@ -55,7 +69,13 @@ type ReindexCursorCodec struct {
 	ttl      time.Duration
 }
 
-// NewReindexCursorCodec constructs an expiring AES-256-GCM task cursor codec.
+// NewReindexCursorCodec accepts 32..4096 key bytes, derives an AES-256 key with
+// SHA-256, and uses standard GCM with crypto/rand nonces. It borrows the clock and
+// checks configured byte/TTL bounds (maximum 16 KiB/24 hours), not key entropy.
+// There is no key ID, rotation overlap, revocation, task deduplication, or erasure
+// facility; key derivation is not a password-hardening KDF.
+// This is the adapter-owned OPENSEARCH-DEC-020 policy, not an OpenSearch token
+// protocol; TestReindexCursorIsEncryptedBoundAndExpiring protects this boundary.
 func NewReindexCursorCodec(key []byte, now func() time.Time, maxBytes int, ttl time.Duration) (*ReindexCursorCodec, error) {
 	if len(key) < sha256.Size {
 		return nil, ErrInvalidReindexCursorCodec
@@ -118,6 +138,8 @@ func (codec *ReindexCursorCodec) seal(payload []byte) (string, error) {
 	if _, err := io.ReadFull(codec.random, nonce); err != nil {
 		return "", ErrInvalidReindexCursor
 	}
+	// Prefix the random nonce; tenant/task binding is authenticated inside the
+	// encrypted JSON rather than supplied as separate associated data.
 	sealed := codec.aead.Seal(nonce, nonce, payload, nil)
 	token := base64.RawURLEncoding.EncodeToString(sealed)
 	if len(token) > codec.maxBytes {

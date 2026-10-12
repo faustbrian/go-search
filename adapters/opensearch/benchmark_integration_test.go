@@ -35,6 +35,12 @@ type sharedBenchmarkAdapter interface {
 	search.Searcher
 }
 
+// BenchmarkSharedSearchSemantics measures fixed 128-document, keyword-field
+// index/query/bulk/window workloads across the fake, real adapter and direct
+// client. Fixtures/client setup precede each b.Loop; loops include acknowledgements
+// and result checks. The integration service/environment must match recorded pins.
+// Fake visibility/mapping/PIT behavior differs and unsupported cursor cases skip;
+// these observations cannot establish universal backend or ranking performance.
 func BenchmarkSharedSearchSemantics(b *testing.B) {
 	limits := search.DefaultLimits()
 	b.Run("fake", func(b *testing.B) {

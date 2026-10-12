@@ -12,10 +12,15 @@ import (
 )
 
 var (
+	// ErrInvalidQuery rejects malformed, over-budget, or unrecognized typed request input.
 	ErrInvalidQuery = errors.New("search: invalid query")
-	ErrUnsupported  = errors.New("search: unsupported capability")
+	// ErrUnsupported identifies a capability or adapter-bound node that cannot be executed
+	// without degradation.
+	ErrUnsupported = errors.New("search: unsupported capability")
+	// ErrUnstableSort requires the final cursor sort component to be DocumentIDSortField.
 	ErrUnstableSort = errors.New("search: cursor pagination requires a final document ID sort")
-	ErrPageLimit    = errors.New("search: pagination limit exceeded")
+	// ErrPageLimit rejects invalid pagination shape or exhausted traversal bounds.
+	ErrPageLimit = errors.New("search: pagination limit exceeded")
 )
 
 // DocumentIDSortField is the backend-neutral virtual field for a document's
@@ -26,11 +31,20 @@ const DocumentIDSortField = "$document_id"
 // Capabilities declares adapter behavior. False means the adapter must reject
 // the feature before network execution rather than silently degrading it.
 type Capabilities struct {
-	Boolean, Term, FullText, Prefix, Range, Exists, Geo  bool
-	Cursor, PointInTime, Offset                          bool
-	Projection, Highlight, Aggregation, Suggestion       bool
+	// Boolean, Term, FullText, Prefix, Range, Exists, and Geo advertise their respective typed
+	// query families.
+	Boolean, Term, FullText, Prefix, Range, Exists, Geo bool
+	// Cursor and PointInTime jointly enable PIT pagination; Offset enables bounded
+	// non-snapshot windows.
+	Cursor, PointInTime, Offset bool
+	// Projection, Highlight, Aggregation, and Suggestion advertise result-shaping families.
+	Projection, Highlight, Aggregation, Suggestion bool
+	// ExternalVersion, UpdateExisting, and BulkPartialOutcomes advertise versioned
+	// write/result semantics.
 	ExternalVersion, UpdateExisting, BulkPartialOutcomes bool
-	Lifecycle, Templates, RawExtensions                  bool
+	// Lifecycle and Templates advertise management surfaces; RawExtensions advertises explicit
+	// adapter-native query nodes.
+	Lifecycle, Templates, RawExtensions bool
 }
 
 // AllCapabilities returns the complete shared capability set, primarily for
@@ -48,49 +62,83 @@ func AllCapabilities() Capabilities {
 // Query is a typed query node supported by capability-aware adapters.
 type Query interface{ queryNode() }
 
+// MatchAllQuery selects all documents in the resolved scope; it does not bypass tenant policy.
 type MatchAllQuery struct{}
 
 func (MatchAllQuery) queryNode() {}
 
+// BoolQuery combines nested clauses without executing or scoring them in the core.
+// Adapters define ranking and zero-minimum should semantics; do not assume analyzer parity.
 type BoolQuery struct {
+	// Must and Filter require matches; MustNot excludes matches; Should contributes
+	// optional/required alternatives according to MinimumShouldMatch and adapter semantics.
 	Must, Should, Filter, MustNot []Query
-	MinimumShouldMatch            int
+	// MinimumShouldMatch is explicit and nonnegative, no greater than the number of Should
+	// clauses.
+	MinimumShouldMatch int
 }
 
 func (BoolQuery) queryNode() {}
 
+// TermQuery matches an exact scalar indexed value, not full-text analysis.
 type TermQuery struct {
+	// Field is a bounded indexed field name.
 	Field string
+	// Value must be string, number, boolean, or time; null and containers are rejected.
 	Value Value
 }
 
 func (TermQuery) queryNode() {}
 
+// FullTextQuery carries backend-analyzed text; mappings, locale analyzers, and relevance
+// remain application/adapter policy.
 type FullTextQuery struct {
-	Fields                 []string
+	// Fields contains bounded field names with optional positive finite boosts.
+	Fields []string
+	// Text is nonblank input; Analyzer and Locale select explicit backend analysis policy,
+	// without Unicode normalization in the core.
 	Text, Analyzer, Locale string
 }
 
 func (FullTextQuery) queryNode() {}
 
-type PrefixQuery struct{ Field, Prefix string }
+// PrefixQuery matches an indexed string prefix; the core does not fold case or normalize
+// Unicode.
+type PrefixQuery struct {
+	// Field names the indexed string field; Prefix is nonempty and compared by the adapter.
+	Field, Prefix string
+}
 
 func (PrefixQuery) queryNode() {}
 
+// RangeQuery supplies at least one scalar bound; comparison semantics follow the field mapping.
 type RangeQuery struct {
-	Field            string
+	// Field names the mapped comparison field.
+	Field string
+	// GT and GTE are exclusive lower-bound choices; LT and LTE are exclusive upper-bound
+	// choices. Nil omits a bound.
 	GT, GTE, LT, LTE *Value
 }
 
 func (RangeQuery) queryNode() {}
 
-type ExistsQuery struct{ Field string }
+// ExistsQuery tests indexed-value presence, which differs from JSON-key presence for
+// null/empty arrays.
+type ExistsQuery struct {
+	// Field names an indexed-value presence check.
+	Field string
+}
 
 func (ExistsQuery) queryNode() {}
 
+// GeoDistanceQuery supplies finite degree coordinates and a positive numeric kilometer radius.
 type GeoDistanceQuery struct {
-	Field      string
-	Origin     GeoPoint
+	// Field names a mapped geographic field.
+	Field string
+	// Origin is a finite WGS84 latitude/longitude degree pair.
+	Origin GeoPoint
+	// DistanceKM is a positive numeric radius validated through float64 parsing, not a
+	// unit-bearing string.
 	DistanceKM Value
 }
 
@@ -101,7 +149,10 @@ func (GeoDistanceQuery) queryNode() {}
 // authorize construction of these nodes and must not pass unrestricted caller
 // JSON through this type.
 type RawExtensionQuery struct {
+	// Adapter explicitly identifies the only intended interpreter.
 	Adapter string
+	// Payload is a bounded object without duplicate keys; callers must authorize its
+	// semantics, not just its syntax.
 	Payload json.RawMessage
 }
 
@@ -111,7 +162,9 @@ func (RawExtensionQuery) queryNode() {}
 type SortDirection string
 
 const (
-	Ascending  SortDirection = "asc"
+	// Ascending requests increasing backend field order.
+	Ascending SortDirection = "asc"
+	// Descending requests decreasing backend field order.
 	Descending SortDirection = "desc"
 )
 
@@ -119,71 +172,130 @@ const (
 type MissingPlacement string
 
 const (
+	// MissingDefault leaves missing-value placement to the backend.
 	MissingDefault MissingPlacement = ""
-	MissingFirst   MissingPlacement = "_first"
-	MissingLast    MissingPlacement = "_last"
+	// MissingFirst requests missing values before present values.
+	MissingFirst MissingPlacement = "_first"
+	// MissingLast requests missing values after present values.
+	MissingLast MissingPlacement = "_last"
 )
 
+// Sort is one ordered sort component; cursor requests end with DocumentIDSortField.
 type Sort struct {
-	Field     string
+	// Field is a shared field or DocumentIDSortField; backend metadata spellings are rejected.
+	Field string
+	// Direction must be Ascending or Descending.
 	Direction SortDirection
-	Missing   MissingPlacement
+	// Missing selects explicit missing-value placement or the backend default.
+	Missing MissingPlacement
 }
 
+// CursorPage requests bounded PIT traversal. Empty Cursor starts traversal; continuation
+// preserves a fixed absolute deadline.
 type CursorPage struct {
-	Size      int
-	Cursor    string
+	// Size is positive and no greater than MaxPageItems.
+	Size int
+	// Cursor is an opaque sensitive token; keep it unchanged and do not log it.
+	Cursor string
+	// KeepAlive is a positive whole-millisecond duration no greater than MaxCursorDuration.
 	KeepAlive time.Duration
 }
-type OffsetPage struct{ Size, Offset int }
 
-type Projection struct{ Includes, Excludes []string }
-type Highlight struct {
-	FragmentSize, MaxFragments int
-	PreTag, PostTag            string
+// OffsetPage requests a bounded non-snapshot window; concurrent writes may shift results.
+type OffsetPage struct {
+	// Size is a positive page bound; Offset is nonnegative and must leave room within the
+	// total item limit.
+	Size, Offset int
 }
 
+// Projection selects source paths, not schema validation or authorization. Empty lists
+// request full source.
+type Projection struct {
+	// Includes and Excludes are borrowed field-pattern lists; empty lists request all source
+	// fields.
+	Includes, Excludes []string
+}
+
+// Highlight requests backend text fragments. Tags and output remain untrusted content, not
+// safe HTML.
+type Highlight struct {
+	// FragmentSize and MaxFragments request positive bounded backend fragment sizing.
+	FragmentSize, MaxFragments int
+	// PreTag and PostTag are untrusted UTF-8 delimiters; neither validation nor results
+	// sanitize HTML.
+	PreTag, PostTag string
+}
+
+// Aggregation is the closed set of typed aggregation nodes recognized by validation.
 type Aggregation interface{ aggregationNode() }
+
+// TermsAggregation requests a bounded backend term bucket set; results remain
+// backend-native JSON.
 type TermsAggregation struct {
+	// Field is the mapped aggregation field.
 	Field string
-	Size  int
+	// Size is a positive bucket count no greater than MaxPageItems.
+	Size int
 }
 
 func (TermsAggregation) aggregationNode() {}
 
+// RangeBucket supplies a named range with at least one bound; ordering/comparison is
+// mapping-dependent.
 type RangeBucket struct {
-	Key      string
+	// Key is a nonempty UTF-8 result bucket label.
+	Key string
+	// From and To are optional scalar bounds, at least one present; exact boundary behavior
+	// follows the backend.
 	From, To *Value
 }
+
+// RangeAggregation requests explicit range buckets in retained input order.
 type RangeAggregation struct {
-	Field   string
+	// Field is the mapped range field.
+	Field string
+	// Buckets is a borrowed nonempty sequence charged to the query-node budget.
 	Buckets []RangeBucket
 }
 
 func (RangeAggregation) aggregationNode() {}
 
+// Suggestion is the closed set of typed suggestion nodes recognized by validation.
 type Suggestion interface{ suggestionNode() }
+
+// PrefixSuggestion requests a bounded completion-prefix result, not general spell correction.
 type PrefixSuggestion struct {
+	// Field is a completion field; Text is a nonempty UTF-8 prefix.
 	Field, Text string
-	Size        int
+	// Size is a positive result count no greater than MaxPageItems.
+	Size int
 }
 
 func (PrefixSuggestion) suggestionNode() {}
 
 // Request contains a backend-neutral typed search operation.
 type Request struct {
+	// Tenant and Index identify logical scope, not authentication or authorization.
 	Tenant, Index string
-	Query         Query
-	Sort          []Sort
-	Page          any
-	Projection    Projection
-	Highlights    map[string]Highlight
-	Aggregations  map[string]Aggregation
-	Suggestions   map[string]Suggestion
+	// Query is a recognized typed value node; pointer forms are not recognized by the validator.
+	Query Query
+	// Sort is a borrowed ordered tuple, ending in the document-ID tie-breaker for cursor pages.
+	Sort []Sort
+	// Page must contain a CursorPage or OffsetPage value, not a pointer.
+	Page any
+	// Projection controls source disclosure and requires application policy.
+	Projection Projection
+	// Highlights maps requested fields to borrowed fragment settings.
+	Highlights map[string]Highlight
+	// Aggregations maps result names to recognized typed aggregation values.
+	Aggregations map[string]Aggregation
+	// Suggestions maps result names to recognized typed suggestion values.
+	Suggestions map[string]Suggestion
 }
 
-// Validate rejects malformed, unbounded, or unsupported requests before an
-// adapter performs I/O.
+// Validate checks positive limits, UTF-8, input/encoded budgets, supported value
+// nodes, pagination, and shaping syntax before adapter I/O. It performs no
+// normalization, authorization, mapping lookup, relevance evaluation, or HTML sanitization.
 func (r Request) Validate(capabilities Capabilities, limits Limits) error {
 	if limits.Validate() != nil {
 		return ErrInvalidQuery
@@ -558,6 +670,8 @@ func aggregationInputsValidUTF8(aggregation Aggregation) bool {
 	}
 }
 
+// Preflight borrowed collections before recursive validation and JSON construction;
+// this is an input-work budget, not a process-heap or backend query-cost guarantee.
 func requestInputsWithinBudget(request Request, limits Limits) bool {
 	budget := requestInputBudget{bytes: limits.MaxQueryBytes, nodes: limits.MaxQueryClauses, maxCollection: limits.MaxQueryClauses}
 	if !budget.consume(len(request.Tenant)) {

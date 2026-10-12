@@ -13,24 +13,50 @@ import (
 )
 
 var (
-	ErrLifecycleRejected              = errors.New("search/opensearch: lifecycle response rejected")
-	ErrLifecycleDisabled              = errors.New("search/opensearch: lifecycle is not configured")
-	ErrLifecycleDenied                = errors.New("search/opensearch: lifecycle operation denied")
-	ErrLifecycleVerifierRequired      = errors.New("search/opensearch: semantic lifecycle verifier is required")
-	ErrLifecycleCutoverGuardRequired  = errors.New("search/opensearch: lifecycle cutover guard is required")
-	ErrLifecycleCutoverGuardRejected  = errors.New("search/opensearch: lifecycle cutover guard violated its contract")
-	ErrLifecycleCutoverUnverified     = errors.New("search/opensearch: lifecycle cutover target is not verified")
+	// ErrLifecycleRejected rejects incomplete, unacknowledged, or inconsistent lifecycle evidence.
+	ErrLifecycleRejected = errors.New("search/opensearch: lifecycle response rejected")
+	// ErrLifecycleDisabled rejects lifecycle use without configuration.
+	ErrLifecycleDisabled = errors.New("search/opensearch: lifecycle is not configured")
+	// ErrLifecycleDenied hides non-context application authorization failures.
+	ErrLifecycleDenied = errors.New("search/opensearch: lifecycle operation denied")
+	// ErrLifecycleVerifierRequired requires semantic/live-definition verification beyond
+	// separate backend counts.
+	ErrLifecycleVerifierRequired = errors.New("search/opensearch: semantic lifecycle verifier is required")
+	// ErrLifecycleCutoverGuardRequired requires application-owned durable write quiescence for
+	// cutover.
+	ErrLifecycleCutoverGuardRequired = errors.New("search/opensearch: lifecycle cutover guard is required")
+	// ErrLifecycleCutoverGuardRejected identifies violated callback/exclusion contract;
+	// effects may require reconciliation.
+	ErrLifecycleCutoverGuardRejected = errors.New("search/opensearch: lifecycle cutover guard violated its contract")
+	// ErrLifecycleCutoverUnverified refuses alias dispatch when fresh semantic verification
+	// reports drift.
+	ErrLifecycleCutoverUnverified = errors.New("search/opensearch: lifecycle cutover target is not verified")
+	// ErrLifecycleMutationGuardRequired requires shared durable resource exclusion for guarded
+	// mutations.
 	ErrLifecycleMutationGuardRequired = errors.New("search/opensearch: lifecycle mutation guard is required")
+	// ErrLifecycleMutationGuardRejected identifies violated mutation callback contract without
+	// proving effects were undone.
 	ErrLifecycleMutationGuardRejected = errors.New("search/opensearch: lifecycle mutation guard violated its contract")
-	ErrLifecycleCleanupGuardRequired  = errors.New("search/opensearch: lifecycle cleanup guard is required")
-	ErrLifecycleCleanupGuardRejected  = errors.New("search/opensearch: lifecycle cleanup guard violated its contract")
+	// ErrLifecycleCleanupGuardRequired requires final durable eligibility; direct DeleteIndex
+	// always refuses.
+	ErrLifecycleCleanupGuardRequired = errors.New("search/opensearch: lifecycle cleanup guard is required")
+	// ErrLifecycleCleanupGuardRejected identifies violated final-cleanup callback contract,
+	// possibly with unknown deletion receipt.
+	ErrLifecycleCleanupGuardRejected = errors.New("search/opensearch: lifecycle cleanup guard violated its contract")
 )
 
+// LifecycleAuthorizer is a borrowed application policy for exact tenant/resource scope; it
+// must be concurrency-safe and cooperate with context.
 type LifecycleAuthorizer interface {
+	// Authorize checks sensitive tenant/resource scope synchronously before network requests;
+	// non-context errors are hidden.
 	Authorize(context.Context, string, []string) error
 }
+
+// LifecycleAuthorizerFunc adapts a function to LifecycleAuthorizer; nil invocation panics.
 type LifecycleAuthorizerFunc func(context.Context, string, []string) error
 
+// Authorize calls the wrapped policy with an independent resource slice; nil functions panic.
 func (authorize LifecycleAuthorizerFunc) Authorize(ctx context.Context, tenant string, resources []string) error {
 	return authorize(ctx, tenant, append([]string(nil), resources...))
 }
@@ -39,8 +65,13 @@ func (authorize LifecycleAuthorizerFunc) Authorize(ctx context.Context, tenant s
 // tenant and physical generations whose bounded counts were read immediately
 // before verification.
 type LifecycleVerificationRequest struct {
-	Tenant, Source, Target    string
-	SourceCount, TargetCount  uint64
+	// Tenant scopes application authority; Source and Target identify distinct physical
+	// generations.
+	Tenant, Source, Target string
+	// SourceCount and TargetCount are separate fresh backend count observations, not semantic
+	// equivalence.
+	SourceCount, TargetCount uint64
+	// ExpectedTargetFingerprint is the planned definition identity to attest independently.
 	ExpectedTargetFingerprint string
 }
 
@@ -48,8 +79,11 @@ type LifecycleVerificationRequest struct {
 // and the number of IDs whose presence, external version, or canonical source
 // digest differs between generations.
 type LifecycleVerificationResult struct {
+	// TargetFingerprint must be independently derived from the live target definition, not
+	// echoed from input.
 	TargetFingerprint string
-	Drift             uint64
+	// Drift counts differing IDs/versions/canonical sources and must fit count-consistency bounds.
+	Drift uint64
 }
 
 // LifecycleVerifier performs a stable, bounded semantic comparison of two
@@ -58,12 +92,15 @@ type LifecycleVerificationResult struct {
 // traversal limit, must not sample when authorizing alias cutover, and must not
 // echo ExpectedTargetFingerprint without independently attesting live state.
 type LifecycleVerifier interface {
+	// Verify performs complete bounded stable semantic comparison and live-definition
+	// attestation; callback failures are sanitized.
 	Verify(context.Context, LifecycleVerificationRequest) (LifecycleVerificationResult, error)
 }
 
 // LifecycleVerifierFunc adapts a function to LifecycleVerifier.
 type LifecycleVerifierFunc func(context.Context, LifecycleVerificationRequest) (LifecycleVerificationResult, error)
 
+// Verify delegates directly to the wrapped verifier; nil functions panic.
 func (verify LifecycleVerifierFunc) Verify(ctx context.Context, request LifecycleVerificationRequest) (LifecycleVerificationResult, error) {
 	return verify(ctx, request)
 }
@@ -73,8 +110,11 @@ var _ search.LifecycleBackend = (*Client)(nil)
 // LifecycleCutoverRequest identifies the application write scope that must be
 // quiesced continuously across final semantic verification and alias cutover.
 type LifecycleCutoverRequest struct {
+	// Tenant selects policy; Alias moves from physical Source to physical Target under the
+	// application write fence.
 	Tenant, Alias, Source, Target string
-	ExpectedTargetFingerprint     string
+	// ExpectedTargetFingerprint identifies the target definition requiring fresh attestation.
+	ExpectedTargetFingerprint string
 }
 
 // LifecycleCutoverGuard coordinates an application-owned durable write fence.
@@ -84,12 +124,16 @@ type LifecycleCutoverRequest struct {
 // ingress gate, durable buffer, or equivalent quiescence mechanism; they must
 // not hold a Go lock across the callback's OpenSearch network operations.
 type LifecycleCutoverGuard interface {
+	// WithWritesQuiesced synchronously calls operation once after writes drain, retaining
+	// durable quiescence until return; callback-count checks cannot prove that fence.
 	WithWritesQuiesced(context.Context, LifecycleCutoverRequest, func() error) error
 }
 
 // LifecycleCutoverGuardFunc adapts a function to LifecycleCutoverGuard.
 type LifecycleCutoverGuardFunc func(context.Context, LifecycleCutoverRequest, func() error) error
 
+// WithWritesQuiesced delegates directly; the function must satisfy durable synchronous
+// single-callback obligations.
 func (guard LifecycleCutoverGuardFunc) WithWritesQuiesced(ctx context.Context, request LifecycleCutoverRequest, operation func() error) error {
 	return guard(ctx, request, operation)
 }
@@ -97,8 +141,11 @@ func (guard LifecycleCutoverGuardFunc) WithWritesQuiesced(ctx context.Context, r
 // LifecycleMutationRequest identifies one authorized index or alias mutation
 // and every physical or logical resource whose lifecycle state it can change.
 type LifecycleMutationRequest struct {
-	Tenant    string
+	// Tenant scopes application-owned exclusion.
+	Tenant string
+	// Operation identifies the mutation family.
 	Operation Operation
+	// Resources is a copied complete resource set that must share cross-instance exclusion.
 	Resources []string
 }
 
@@ -108,12 +155,16 @@ type LifecycleMutationRequest struct {
 // cross-instance fence for overlapping tenant resources. A process-local lock
 // is not sufficient for production deployments.
 type LifecycleMutationGuard interface {
+	// WithLifecycleMutation synchronously calls operation once under durable cross-instance
+	// resource exclusion; it must propagate the operation result.
 	WithLifecycleMutation(context.Context, LifecycleMutationRequest, func() error) error
 }
 
 // LifecycleMutationGuardFunc adapts a function to LifecycleMutationGuard.
 type LifecycleMutationGuardFunc func(context.Context, LifecycleMutationRequest, func() error) error
 
+// WithLifecycleMutation delegates with an independent resource slice; no durable fence is
+// implemented by the wrapper.
 func (guard LifecycleMutationGuardFunc) WithLifecycleMutation(ctx context.Context, request LifecycleMutationRequest, operation func() error) error {
 	request.Resources = append([]string(nil), request.Resources...)
 	return guard(ctx, request, operation)
@@ -124,22 +175,36 @@ func (guard LifecycleMutationGuardFunc) WithLifecycleMutation(ctx context.Contex
 // proving that no alias, retained reader/PIT, retention, or backup prerequisite
 // protects the generation.
 type LifecycleCleanupGuard interface {
+	// WithCleanupEligible synchronously calls operation once while retaining complete final
+	// deletion eligibility, including aliases/readers/retention/backup policy.
 	WithCleanupEligible(context.Context, search.LifecycleCleanupRequest, func() error) error
 }
 
 // LifecycleCleanupGuardFunc adapts a function to LifecycleCleanupGuard.
 type LifecycleCleanupGuardFunc func(context.Context, search.LifecycleCleanupRequest, func() error) error
 
+// WithCleanupEligible delegates directly; the wrapper does not implement final eligibility
+// or retention policy.
 func (guard LifecycleCleanupGuardFunc) WithCleanupEligible(ctx context.Context, request search.LifecycleCleanupRequest, operation func() error) error {
 	return guard(ctx, request, operation)
 }
 
+// LifecycleConfig borrows application-owned lifecycle policies, fences, verifier,
+// and task codec. New requires Authorizer but other missing dependencies fail
+// only at their affected operation. Configuration is not durability qualification.
 type LifecycleConfig struct {
-	Authorizer         LifecycleAuthorizer
-	Verifier           LifecycleVerifier
-	CutoverGuard       LifecycleCutoverGuard
-	MutationGuard      LifecycleMutationGuard
-	CleanupGuard       LifecycleCleanupGuard
+	// Authorizer is required when lifecycle configuration is supplied and owns resource policy.
+	Authorizer LifecycleAuthorizer
+	// Verifier is required for VerifyIndex/CutoverAlias semantic attestation.
+	Verifier LifecycleVerifier
+	// CutoverGuard is required for verified alias movement and owns durable write quiescence.
+	CutoverGuard LifecycleCutoverGuard
+	// MutationGuard is required for creation/alias/cleanup exclusion across all application
+	// instances.
+	MutationGuard LifecycleMutationGuard
+	// CleanupGuard is required for final irreversible deletion eligibility.
+	CleanupGuard LifecycleCleanupGuard
+	// ReindexCursorCodec is required for encrypted expiring task continuation; it is borrowed.
 	ReindexCursorCodec *ReindexCursorCodec
 }
 
@@ -151,6 +216,9 @@ func cloneLifecycleConfig(config *LifecycleConfig) *LifecycleConfig {
 	return &copyConfig
 }
 
+// CreateIndex authorizes and enters the configured durable mutation guard before
+// creating the definition. Both metadata and shard acknowledgement are required;
+// ambiguous receipt is not retried and requires application recovery.
 func (client *Client) CreateIndex(ctx context.Context, tenant string, definition search.IndexDefinition) error {
 	if !validLifecycleTenant(tenant) || !indexTargetPattern.MatchString(definition.Name()) {
 		return ErrUnsafeIndexTarget
@@ -177,6 +245,11 @@ func (client *Client) CreateIndex(ctx context.Context, tenant string, definition
 	})
 }
 
+// Reindex authorizes exact physical scope and submits one asynchronous external-
+// version task when cursor is empty, or polls a decrypted bound task otherwise.
+// Successful incomplete polls reseal a fresh bounded lease; persist the replacement
+// cursor. Cancellation stops this request, not the server task. No task cancellation,
+// deduplication, migration-ID binding, or durable checkpoint is implemented here.
 func (client *Client) Reindex(ctx context.Context, tenant, source, target, cursor string) (string, bool, error) {
 	if !validLifecycleTenant(tenant) || !indexTargetPattern.MatchString(source) || !indexTargetPattern.MatchString(target) || source == target {
 		return cursor, false, ErrUnsafeIndexTarget
@@ -252,6 +325,10 @@ func (client *Client) Reindex(ctx context.Context, tenant, source, target, curso
 	return cursor, true, nil
 }
 
+// VerifyIndex reads separate counts then invokes the application semantic verifier,
+// requiring expected live target fingerprint and possible drift counts. The adapter
+// cannot independently prove complete traversal or snapshot isolation. A standalone
+// call does not quiesce writers; CutoverAlias supplies the configured write fence.
 func (client *Client) VerifyIndex(ctx context.Context, tenant, source, target, expectedTargetFingerprint string) (search.VerificationReport, error) {
 	if !validLifecycleTenant(tenant) || !indexTargetPattern.MatchString(source) || !indexTargetPattern.MatchString(target) || source == target ||
 		!indexFingerprintPattern.MatchString(expectedTargetFingerprint) {
@@ -312,7 +389,9 @@ func lifecycleVerifierFailure(err error) *Failure {
 // CutoverAlias holds the configured application write fence across final
 // semantic verification and the atomic alias mutation. Writes acknowledged
 // before the fence must be visible to the verifier; writes admitted after the
-// fence is released resolve through the new alias generation.
+// fence is released must resolve through the new alias generation. Those are
+// application guard/verifier/resolver obligations, not independently enforced
+// durability. Post-dispatch ambiguity and later checkpoint failure need recovery.
 func (client *Client) CutoverAlias(ctx context.Context, tenant, alias, source, target, expectedTargetFingerprint string) (report search.VerificationReport, err error) {
 	defer func() {
 		if err != nil {
@@ -458,6 +537,8 @@ func (client *Client) countIndex(ctx context.Context, index string) (uint64, err
 	return *count.Count, nil
 }
 
+// ResolveAlias authorizes and requires one returned physical index containing the
+// requested alias. It is a separate observation, not a compare-and-swap transaction.
 func (client *Client) ResolveAlias(ctx context.Context, tenant, alias string) (string, error) {
 	if !validLifecycleTenant(tenant) || !indexTargetPattern.MatchString(alias) {
 		return "", ErrUnsafeIndexTarget
@@ -542,6 +623,8 @@ func (client *Client) AddAlias(ctx context.Context, tenant, alias, index string,
 	})
 }
 
+// DeleteIndex refuses direct deletion with ErrLifecycleCleanupGuardRequired after
+// basic identity validation. Use CleanupIndex with the complete migration binding.
 func (client *Client) DeleteIndex(ctx context.Context, tenant, index string) error {
 	if !validLifecycleTenant(tenant) || !indexTargetPattern.MatchString(index) {
 		return ErrUnsafeIndexTarget
@@ -575,6 +658,8 @@ func (client *Client) CleanupIndex(ctx context.Context, request search.Lifecycle
 	})
 }
 
+// Check callback cardinality/completion without claiming that these process-
+// local flags establish eligibility or exclusion in an application store.
 func (client *Client) cleanupIndexEligible(ctx context.Context, request search.LifecycleCleanupRequest) error {
 	var calls atomic.Uint32
 	var active atomic.Bool
@@ -673,6 +758,8 @@ func (client *Client) withLifecycleMutation(ctx context.Context, request Lifecyc
 	completedAtGuardReturn := completed.Load()
 	active.Store(false)
 	cancelOperation()
+	// Pre-callback context wrapping remains observable through Failure.Unwrap;
+	// application guards must keep that retained chain free of private details.
 	if calls.Load() == 0 && (errors.Is(guardErr, context.Canceled) || errors.Is(guardErr, context.DeadlineExceeded)) {
 		return cancelledFailure(request.Operation, guardErr)
 	}

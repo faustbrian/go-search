@@ -7,31 +7,51 @@ import (
 	"net/http"
 )
 
+// HealthStatus is the backend-reported green/yellow/red cluster state.
 type HealthStatus string
 
 const (
-	HealthGreen  HealthStatus = "green"
+	// HealthGreen reports the backend green state, not application availability.
+	HealthGreen HealthStatus = "green"
+	// HealthYellow reports primary availability with backend replica degradation.
 	HealthYellow HealthStatus = "yellow"
-	HealthRed    HealthStatus = "red"
+	// HealthRed reports backend primary-shard unavailability.
+	HealthRed HealthStatus = "red"
 )
 
 // HealthReport is the bounded readiness view. Yellow is ready when primary
 // shards are active and no shard initialization or timeout is in progress.
 type HealthReport struct {
-	Status              HealthStatus
-	Ready               bool
-	TimedOut            bool
-	Nodes               int
-	DataNodes           int
+	// Status is the reported cluster color.
+	Status HealthStatus
+	// Ready is the adapter readiness predicate, not zero relocation/unassignment or
+	// whole-application readiness.
+	Ready bool
+	// TimedOut is the backend timeout indication.
+	TimedOut bool
+	// Nodes is reported total node count.
+	Nodes int
+	// DataNodes is reported data-node count.
+	DataNodes int
+	// ActivePrimaryShards is reported active primary count.
 	ActivePrimaryShards int
-	ActiveShards        int
-	RelocatingShards    int
-	InitializingShards  int
-	UnassignedShards    int
-	PendingTasks        int
+	// ActiveShards is reported active shard count.
+	ActiveShards int
+	// RelocatingShards is reported relocation count and does not itself make Ready false.
+	RelocatingShards int
+	// InitializingShards is reported initialization count; positive values make Ready false.
+	InitializingShards int
+	// UnassignedShards is reported unassigned count and does not itself make Ready false.
+	UnassignedShards int
+	// PendingTasks is reported cluster pending task count.
+	PendingTasks int
+	// ActiveShardsPercent is the backend reported percentage, not a measured application SLO.
 	ActiveShardsPercent float64
 }
 
+// Health reads operator-wide cluster state and computes readiness from no timeout,
+// non-red status, positive data/primary counts, and no initializing shards.
+// It is not tenant-authorized or a semantic read/write/persistence probe.
 func (c *Client) Health(ctx context.Context) (HealthReport, error) {
 	body, err := c.execute(ctx, OperationHealth, http.MethodGet, "/_cluster/health?level=cluster", nil, http.StatusOK)
 	if err != nil {
@@ -76,21 +96,37 @@ func (c *Client) Health(ctx context.Context) (HealthReport, error) {
 // CapacityReport exposes bounded low-cardinality saturation counters without
 // retaining node IDs, index names, tenants, queries, or document fields.
 type CapacityReport struct {
-	Nodes              int
-	DataNodes          int
-	Indices            int
-	Shards             int
-	PrimaryShards      int
-	Documents          uint64
-	DeletedDocuments   uint64
-	StoreBytes         uint64
-	HeapUsedBytes      uint64
-	HeapMaxBytes       uint64
+	// Nodes is the cluster-stat total node count.
+	Nodes int
+	// DataNodes is the cluster-stat data-node count.
+	DataNodes int
+	// Indices is the reported index count.
+	Indices int
+	// Shards is the reported total shard count.
+	Shards int
+	// PrimaryShards is the reported primary count.
+	PrimaryShards int
+	// Documents is reported indexed-document count.
+	Documents uint64
+	// DeletedDocuments is reported deleted-document count, not durable tombstone retention.
+	DeletedDocuments uint64
+	// StoreBytes is reported index store bytes.
+	StoreBytes uint64
+	// HeapUsedBytes is reported JVM used heap bytes, not this client process heap.
+	HeapUsedBytes uint64
+	// HeapMaxBytes is reported JVM maximum heap bytes.
+	HeapMaxBytes uint64
+	// DiskAvailableBytes is reported cluster filesystem availability.
 	DiskAvailableBytes uint64
+	// ThreadPoolRejected is caller-owned cumulative counters summed by safe pool name.
 	ThreadPoolRejected map[string]uint64
-	BreakerTripped     map[string]uint64
+	// BreakerTripped is caller-owned cumulative counters summed by safe breaker name.
+	BreakerTripped map[string]uint64
 }
 
+// Capacity performs two separately bounded operator-wide requests and aggregates
+// safe named counters with overflow checks. The two observations are not an atomic
+// cluster snapshot; returned maps are caller-owned and not tenant-authorized.
 func (c *Client) Capacity(ctx context.Context) (CapacityReport, error) {
 	clusterBody, err := c.execute(ctx, OperationCapacity, http.MethodGet, "/_cluster/stats?human=false", nil, http.StatusOK)
 	if err != nil {

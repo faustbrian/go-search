@@ -11,29 +11,53 @@ import (
 )
 
 var (
-	ErrInvalidReconciler           = errors.New("search: reconciliation dependencies and limits are required")
-	ErrInvalidReconciliation       = errors.New("search: invalid reconciliation request")
-	ErrReconciliationLimit         = errors.New("search: reconciliation record limit exceeded")
-	ErrMalformedReconciliation     = errors.New("search: malformed or non-progressing reconciliation page")
+	// ErrInvalidReconciler requires nonnil dependencies and positive valid limits.
+	ErrInvalidReconciler = errors.New("search: reconciliation dependencies and limits are required")
+	// ErrInvalidReconciliation rejects invalid tenant/index or traversal request bounds.
+	ErrInvalidReconciliation = errors.New("search: invalid reconciliation request")
+	// ErrReconciliationLimit rejects page, combined record, or retained-state byte estimates
+	// beyond limits.
+	ErrReconciliationLimit = errors.New("search: reconciliation record limit exceeded")
+	// ErrMalformedReconciliation rejects non-progressing, oversized, misordered, or
+	// inconsistent reader pages.
+	ErrMalformedReconciliation = errors.New("search: malformed or non-progressing reconciliation page")
+	// ErrReconciliationDeletionGuard refuses orphan repair without a valid durable deletion
+	// reservation; context sentinels may be joined.
 	ErrReconciliationDeletionGuard = errors.New("search: orphan repair requires a durable source deletion guard")
-	ErrRepairPartial               = errors.New("search: reconciliation repair was partial or ambiguous")
+	// ErrRepairPartial identifies partial, ambiguous, or misattributed repair result evidence.
+	ErrRepairPartial = errors.New("search: reconciliation repair was partial or ambiguous")
 )
 
+// ReconciliationRecord is mutable snapshot evidence. Source records carry a copied
+// Document; index records must not carry one.
 type ReconciliationRecord struct {
-	ID       string
-	Version  uint64
-	Digest   string
+	// ID is the stable nonempty UTF-8 identity used for strict ordering.
+	ID string
+	// Version is positive source/index external-version evidence.
+	Version uint64
+	// Digest is nonempty content identity; source digests are checked against Document.
+	Digest string
+	// Document is required only for authoritative source records; retained source bytes are
+	// copied.
 	Document *Document
 }
 
+// SourceRecord copies document source and computes its canonical digest without validating
+// the document.
 func SourceRecord(document Document) ReconciliationRecord {
 	copyDocument := document
 	copyDocument.Source = append(json.RawMessage(nil), document.Source...)
 	return ReconciliationRecord{ID: document.ID, Version: document.Version, Digest: SourceDigest(document.Source), Document: &copyDocument}
 }
+
+// IndexRecord constructs metadata-only index evidence without validation.
 func IndexRecord(id string, version uint64, digest string) ReconciliationRecord {
 	return ReconciliationRecord{ID: id, Version: version, Digest: digest}
 }
+
+// SourceDigest hashes UTF-8 object JSON using Go JSON key ordering and number text.
+// It returns empty for invalid/non-object input, applies no Limits budget, and alone
+// does not reject duplicate keys or establish RFC 8785 canonicalization.
 func SourceDigest(source json.RawMessage) string {
 	if !utf8.Valid(source) {
 		return ""
@@ -46,12 +70,22 @@ func SourceDigest(source json.RawMessage) string {
 	return hex.EncodeToString(sum[:])
 }
 
+// ReconciliationPage carries borrowed page data; readers must supply one stable, strictly
+// ID-ordered traversal.
 type ReconciliationPage struct {
+	// Records is a borrowed bounded page, strictly ordered across the complete traversal.
 	Records []ReconciliationRecord
-	Cursor  string
-	Done    bool
+	// Cursor must progress on nonfinal pages and be empty when Done.
+	Cursor string
+	// Done marks the terminal page; it does not independently prove snapshot consistency.
+	Done bool
 }
+
+// ReconciliationReader owns snapshot identity and consistency across pages; the core checks
+// shape/progress, not isolation.
 type ReconciliationReader interface {
+	// Read returns the next tenant/index-bound stable ID page. Empty nonfinal pages and
+	// repeated cursors are rejected.
 	Read(context.Context, string, string, string, int) (ReconciliationPage, error)
 }
 
@@ -59,7 +93,9 @@ type ReconciliationReader interface {
 // a bounded source snapshot. ObservedIndexVersion is the minimum version that
 // a guarded deletion must supersede.
 type ReconciliationDeletion struct {
-	Tenant, Index, ID    string
+	// Tenant, Index, and ID bind a durable deletion reservation to one authoritative identity.
+	Tenant, Index, ID string
+	// ObservedIndexVersion is the indexed version the reserved tombstone must supersede.
 	ObservedIndexVersion uint64
 }
 
@@ -70,36 +106,69 @@ type ReconciliationDeletion struct {
 // repeated reservation safe after an ambiguous or interrupted repair run and
 // must be safe for concurrent calls.
 type ReconciliationDeletionGuard interface {
+	// ReserveDeletion atomically confirms current source deletion and reserves a repeat-safe
+	// version above the observed index and below terminal uint64.
 	ReserveDeletion(context.Context, ReconciliationDeletion) (uint64, error)
 }
 
+// DriftKind classifies source/index differences without treating the index as authority.
 type DriftKind string
 
 const (
-	DriftMissing   DriftKind = "missing"
-	DriftStale     DriftKind = "stale"
+	// DriftMissing means an authoritative source ID is absent from the index.
+	DriftMissing DriftKind = "missing"
+	// DriftStale means the index version is below the source version.
+	DriftStale DriftKind = "stale"
+	// DriftDivergent means equal-version digest mismatch or an index version ahead of source;
+	// it is never repaired automatically.
 	DriftDivergent DriftKind = "divergent"
-	DriftOrphaned  DriftKind = "orphaned"
+	// DriftOrphaned means an indexed ID is absent from the separately scanned source snapshot,
+	// not proof of current deletion.
+	DriftOrphaned DriftKind = "orphaned"
 )
 
+// Drift records one ID difference; versions are evidence, not permission to overwrite
+// equal/newer index state.
 type Drift struct {
-	ID                          string
-	Kind                        DriftKind
+	// ID is the compared document identity.
+	ID string
+	// Kind identifies missing, stale, divergent, or orphaned state.
+	Kind DriftKind
+	// SourceVersion and IndexVersion are observed versions; zero means absent on that side.
 	SourceVersion, IndexVersion uint64
 }
+
+// ReconciliationRequest bounds one combined source/index scan and optionally dispatches
+// repairs.
 type ReconciliationRequest struct {
-	Tenant, Index        string
+	// Tenant and Index select logical scope; readers/indexer own authorization.
+	Tenant, Index string
+	// PageSize bounds each page; MaxRecords bounds the combined source and index record count.
 	PageSize, MaxRecords int
-	Repair               bool
-}
-type ReconciliationReport struct {
-	SourceRecords int
-	IndexRecords  int
-	Drift         []Drift
-	Repaired      int
-	Complete      bool
+	// Repair enables missing/stale upserts and guarded orphan deletes; divergence remains
+	// reported only.
+	Repair bool
 }
 
+// ReconciliationReport retains mutable drift data and acknowledged repair counts; Complete
+// does not mean zero drift.
+type ReconciliationReport struct {
+	// SourceRecords counts retained authoritative records.
+	SourceRecords int
+	// IndexRecords counts retained index records.
+	IndexRecords int
+	// Drift is caller-owned difference evidence, possibly nonempty even when Complete.
+	Drift []Drift
+	// Repaired counts acknowledged applied items, not a new zero-drift proof.
+	Repaired int
+	// Complete marks completed scanning/selected dispatch; it is false on partial repair or
+	// failed orphan guards.
+	Complete bool
+}
+
+// Reconciler borrows readers, indexer, and optional deletion guard. It creates no goroutine
+// or durable checkpoint;
+// readers/callbacks must be concurrency-safe and cooperate with caller cancellation.
 type Reconciler struct {
 	source        ReconciliationReader
 	index         ReconciliationReader
@@ -132,9 +201,12 @@ func NewReconcilerWithDeletionGuard(source, index ReconciliationReader, repair I
 	return reconciler, nil
 }
 
-// Run compares bounded, stable ID-ordered snapshots from the source of truth
-// and derived index. Same-version content divergence is reported but never
-// overwritten because external version semantics cannot safely apply it.
+// Run fully reads bounded stable source and index snapshots before merging IDs.
+// MaxRecords and retained-byte estimates are shared across both scans. Missing/stale
+// records may be repaired; divergent records (equal-version digest mismatch or
+// index-ahead version) are never overwritten. Orphans require a durable deletion
+// guard before any bulk dispatch. Complete means the scans and selected repair
+// batches completed, not zero drift or an atomic snapshot across both readers.
 func (r *Reconciler) Run(ctx context.Context, request ReconciliationRequest) (ReconciliationReport, error) {
 	maximumRecords := r.limits.MaxPages * r.limits.MaxPageItems
 	if request.Tenant == "" || !utf8.ValidString(request.Tenant) {

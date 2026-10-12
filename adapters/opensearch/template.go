@@ -9,6 +9,7 @@ import (
 	"github.com/faustbrian/go-search"
 )
 
+// MaximumIndexPatterns bounds patterns in one composable template request.
 const MaximumIndexPatterns = 32
 
 var indexPattern = regexp.MustCompile(`^[a-z0-9*][a-z0-9*._-]{0,254}$`)
@@ -47,7 +48,9 @@ func (c *Client) PutIndexTemplate(ctx context.Context, tenant, name string, patt
 	return requireAcknowledged(OperationTemplate, response)
 }
 
-// DeleteIndexTemplate idempotently removes one authorized template.
+// DeleteIndexTemplate removes one authorized template, treating the recognized
+// resource-not-found response as success. Other or ambiguous outcomes are errors;
+// the adapter does not retry and does not assume every HTTP 404 means absence.
 func (c *Client) DeleteIndexTemplate(ctx context.Context, tenant, name string) error {
 	if !validLifecycleTenant(tenant) || !validPhysicalName(name) {
 		return ErrUnsafeIndexTarget

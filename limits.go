@@ -5,26 +5,43 @@ import (
 	"time"
 )
 
+// ErrInvalidLimits rejects nonpositive limits or an overflowing page/item product.
 var ErrInvalidLimits = errors.New("search: limits must be positive")
 
 // Limits bounds caller-controlled identifiers, payloads, traversal, and
 // response decoding. Adapters may advertise stricter limits.
 type Limits struct {
-	MaxTenantBytes    int
-	MaxIndexBytes     int
-	MaxIDBytes        int
-	MaxSourceBytes    int
-	MaxQueryBytes     int
-	MaxBulkItems      int
-	MaxBulkBytes      int
-	MaxPageItems      int
-	MaxPages          int
-	MaxResultBytes    int64
+	// MaxTenantBytes bounds UTF-8 tenant identifier bytes.
+	MaxTenantBytes int
+	// MaxIndexBytes bounds logical index identifier bytes.
+	MaxIndexBytes int
+	// MaxIDBytes bounds document and selected lifecycle identifier bytes.
+	MaxIDBytes int
+	// MaxSourceBytes bounds source bytes and combined definition JSON bytes.
+	MaxSourceBytes int
+	// MaxQueryBytes bounds request input and encoded fingerprint payload bytes.
+	MaxQueryBytes int
+	// MaxBulkItems bounds operations in one bulk request.
+	MaxBulkItems int
+	// MaxBulkBytes bounds the shared input estimate; adapters must also bound final wire bytes.
+	MaxBulkBytes int
+	// MaxPageItems bounds requested hits or records per page.
+	MaxPageItems int
+	// MaxPages bounds traversal pages; its product with MaxPageItems must fit int.
+	MaxPages int
+	// MaxResultBytes bounds adapter traversal bytes and reconciliation retained-state estimates.
+	MaxResultBytes int64
+	// MaxCursorDuration bounds remaining signed search-cursor lifetime at decode.
 	MaxCursorDuration time.Duration
-	MaxQueryDepth     int
-	MaxQueryClauses   int
-	MaxJSONDepth      int
-	MaxJSONNodes      int
+	// MaxQueryDepth bounds nested typed query depth.
+	MaxQueryDepth int
+	// MaxQueryClauses bounds query nodes and selected request collection sizes.
+	MaxQueryClauses int
+	// MaxJSONDepth bounds JSON object/array nesting at validated source boundaries.
+	MaxJSONDepth int
+	// MaxJSONNodes bounds JSON member/element counts; definitions share the budget across both
+	// objects.
+	MaxJSONNodes int
 }
 
 // DefaultLimits returns conservative bounded defaults.
@@ -48,7 +65,8 @@ func DefaultLimits() Limits {
 	}
 }
 
-// Validate rejects configurations that leave a resource unbounded.
+// Validate requires positive limits and a representable page/item product.
+// It does not allocate resources, apply defaults, or bound arbitrary callbacks.
 func (l Limits) Validate() error {
 	if l.MaxTenantBytes <= 0 || l.MaxIndexBytes <= 0 || l.MaxIDBytes <= 0 ||
 		l.MaxSourceBytes <= 0 || l.MaxQueryBytes <= 0 || l.MaxBulkItems <= 0 || l.MaxBulkBytes <= 0 ||

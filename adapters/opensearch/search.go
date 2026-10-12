@@ -42,7 +42,9 @@ var analyzerPattern = regexp.MustCompile(`^[A-Za-z0-9][A-Za-z0-9_-]{0,127}$`)
 type IndexAccess string
 
 const (
-	IndexRead  IndexAccess = "read"
+	// IndexRead requests a read alias and exact response generation.
+	IndexRead IndexAccess = "read"
+	// IndexWrite requests the application-authorized write alias.
 	IndexWrite IndexAccess = "write"
 )
 
@@ -52,8 +54,11 @@ const (
 // contain raw tenant labels unless the caller has explicitly determined that
 // disclosure is safe.
 type IndexTarget struct {
+	// Name is the request alias; PhysicalName is the exact permitted backend response generation.
 	Name, PhysicalName string
-	Fingerprint        string
+	// Fingerprint binds continuation to the application-attested immutable definition; syntax
+	// validation is not live attestation.
+	Fingerprint string
 }
 
 // IndexResolver maps a tenant and logical index to a least-privilege request
@@ -62,12 +67,16 @@ type IndexTarget struct {
 // another tenant, and must update the physical generation inside the same
 // application write fence that protects an alias cutover.
 type IndexResolver interface {
+	// Resolve returns tenant-correct alias/generation scope for access; callbacks run before
+	// network timeout and errors are sanitized.
 	Resolve(context.Context, string, string, IndexAccess) (IndexTarget, error)
 }
 
 // IndexResolverFunc adapts a function to IndexResolver.
 type IndexResolverFunc func(context.Context, string, string, IndexAccess) (IndexTarget, error)
 
+// Resolve delegates directly to the wrapped function; nil functions panic and errors pass
+// through.
 func (resolve IndexResolverFunc) Resolve(ctx context.Context, tenant, index string, access IndexAccess) (IndexTarget, error) {
 	return resolve(ctx, tenant, index, access)
 }
@@ -77,15 +86,25 @@ func (resolve IndexResolverFunc) Resolve(ctx context.Context, tenant, index stri
 // query node; result-shaping fields are copied so policies can authorize field
 // disclosure, filtering, sorting, aggregations, suggestions, and highlights.
 type SearchAuthorization struct {
+	// Tenant and Index are sensitive logical authorization scope.
 	Tenant, Index string
-	Query         search.Query
-	Sort          []search.Sort
-	Pagination    SearchPaginationAuthorization
-	Projection    search.Projection
-	Highlights    map[string]search.Highlight
-	Aggregations  map[string]search.Aggregation
-	Suggestions   map[string]search.Suggestion
-	FullSource    bool
+	// Query is an independent copy of the validated recognized query graph.
+	Query search.Query
+	// Sort is a copied ordered field tuple.
+	Sort []search.Sort
+	// Pagination discloses cost/continuation intent without token bytes.
+	Pagination SearchPaginationAuthorization
+	// Projection is copied field-disclosure intent.
+	Projection search.Projection
+	// Highlights is copied fragment-field scope; tags remain untrusted content.
+	Highlights map[string]search.Highlight
+	// Aggregations is a copied typed aggregation graph.
+	Aggregations map[string]search.Aggregation
+	// Suggestions is copied completion scope.
+	Suggestions map[string]search.Suggestion
+	// FullSource is true only when both source projection lists are empty; it requires
+	// explicit policy approval.
+	FullSource bool
 }
 
 // SearchPaginationKind identifies the bounded traversal shape presented to a
@@ -93,47 +112,67 @@ type SearchAuthorization struct {
 type SearchPaginationKind string
 
 const (
+	// SearchPaginationCursor identifies PIT continuation intent.
 	SearchPaginationCursor SearchPaginationKind = "cursor"
+	// SearchPaginationOffset identifies bounded non-snapshot navigation.
 	SearchPaginationOffset SearchPaginationKind = "offset"
 )
 
 // SearchPaginationAuthorization exposes search cost and continuation intent to
 // policy. Cursor bytes remain private because binding is verified separately.
 type SearchPaginationAuthorization struct {
-	Kind         SearchPaginationKind
-	Size         int
-	Offset       int
-	KeepAlive    time.Duration
+	// Kind distinguishes cursor and offset traversal.
+	Kind SearchPaginationKind
+	// Size is the validated requested page count.
+	Size int
+	// Offset is nonnegative shallow navigation, zero for cursors.
+	Offset int
+	// KeepAlive is requested cursor duration, zero for offsets.
+	KeepAlive time.Duration
+	// Continuation reports a nonempty cursor, not its authenticated contents.
 	Continuation bool
 }
 
 // SearchAuthorizer approves one complete logical search intent. It must be
 // concurrency-safe and must treat raw-extension payloads as untrusted data.
 type SearchAuthorizer interface {
+	// AuthorizeSearch approves the complete copied intent synchronously before
+	// resolver/network access; denial errors are sanitized.
 	AuthorizeSearch(context.Context, SearchAuthorization) error
 }
 
 // SearchAuthorizerFunc adapts a function to SearchAuthorizer.
 type SearchAuthorizerFunc func(context.Context, SearchAuthorization) error
 
+// AuthorizeSearch delegates directly to the wrapped policy; nil functions panic.
 func (authorize SearchAuthorizerFunc) AuthorizeSearch(ctx context.Context, request SearchAuthorization) error {
 	return authorize(ctx, request)
 }
 
-// SearchConfig owns the complete typed-search boundary. Raw OpenSearch DSL is
-// intentionally not accepted by this configuration.
+// SearchConfig defines the typed-search boundary. RawExtensionQuery is an
+// explicit bounded query slot, advertised only when Authorizer is supplied;
+// it is not unrestricted request DSL or independently safe application policy.
 type SearchConfig struct {
-	Limits      search.Limits
+	// Limits is a positive validated copy; zero fields are not defaulted.
+	Limits search.Limits
+	// CursorCodec is borrowed and supplies the authoritative cursor clock and signing key.
 	CursorCodec *search.CursorCodec
-	Resolver    IndexResolver
-	Authorizer  SearchAuthorizer
-	WriteGuard  WriteGuard
+	// Resolver is a borrowed tenant-correct alias/generation policy.
+	Resolver IndexResolver
+	// Authorizer is borrowed; nil causes all valid Search calls to fail closed.
+	Authorizer SearchAuthorizer
+	// WriteGuard is borrowed; nil disables mutation capabilities and Write/Bulk.
+	WriteGuard WriteGuard
 	// MaximumOpenPointInTimes bounds PITs created by one client and retained in
 	// returned cursors. Zero selects DefaultMaximumOpenPointInTimes.
 	MaximumOpenPointInTimes int
+	// Clock is ignored; CursorCodec owns cursor time.
+	//
 	// Deprecated: CursorCodec owns cursor time. Clock is retained for source
 	// compatibility and is ignored.
-	Clock           func() time.Time
+	Clock func() time.Time
+	// LocaleAnalyzers is a copied bounded locale-to-analyzer allowlist; no automatic locale
+	// normalization occurs.
 	LocaleAnalyzers map[string]string
 }
 
@@ -162,9 +201,13 @@ func (c *Client) Capabilities(ctx context.Context) (search.Capabilities, error) 
 	}, nil
 }
 
-// Search performs one bounded typed search. Cursor pages own a PIT until the
-// final empty/short page or an error closes it; successful continuation moves
-// that ownership into the signed cursor.
+// Search validates/copies intent, authorizes it, resolves exact generation scope,
+// and performs typed backend requests without adapter retries. Offset searches
+// may return partial diagnostics; cursor searches reject partial results. A full
+// cursor page yields a sensitive signed continuation; terminal/error paths attempt
+// PIT cleanup with caller cancellation detached and a fresh request timeout.
+// Cleanup failure is returned and retains a local lease until expiry/Close.
+// Abandoned/backend-unknown PITs rely on server expiry; Close does not delete them.
 func (c *Client) Search(ctx context.Context, request search.Request) (result search.Result, err error) {
 	capabilities, err := c.Capabilities(ctx)
 	if err != nil {
@@ -512,6 +555,8 @@ func sameResponseKeys[A, B any](response map[string]A, requested map[string]B) b
 	return true
 }
 
+// Copy twice: execution state is separate from the mutable authorization view,
+// so policy callbacks cannot alter the validated request that is dispatched.
 func cloneExecutionRequest(request search.Request) search.Request {
 	request.Query = cloneAuthorizationQuery(request.Query)
 	request.Sort = append([]search.Sort(nil), request.Sort...)
@@ -848,6 +893,11 @@ func encodeSearchRequest(request search.Request, state search.CursorState, local
 	return json.Marshal(body)
 }
 
+// The exact OpenSearch 2.19.6/3.8.0 wire profile is application policy, not
+// portable ranking: OPENSEARCH-DEC-006/-008 in docs/specification-decisions.md
+// and TestSearchEncodingWireContract protect these translations. Explicit zero
+// minimum_should_match is retained by TestEncodeBoolPreservesZeroMinimumShouldMatchSemantics;
+// do not substitute backend defaults or infer parity with the test fake.
 func encodeQuery(query search.Query, localeAnalyzers map[string]string) (any, error) {
 	switch node := query.(type) {
 	case search.MatchAllQuery:

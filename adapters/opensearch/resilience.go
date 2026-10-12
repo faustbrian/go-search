@@ -9,32 +9,53 @@ import (
 )
 
 const (
-	DefaultMaximumInFlight         = 64
+	// DefaultMaximumInFlight is the per-client permit count selected by zero configuration.
+	DefaultMaximumInFlight = 64
+	// DefaultCircuitFailureThreshold selects the consecutive downstream failure threshold.
 	DefaultCircuitFailureThreshold = 5
-	DefaultCircuitOpenDuration     = 30 * time.Second
-	maximumInFlight                = 4_096
-	maximumQueued                  = 65_536
+	// DefaultCircuitOpenDuration selects the per-client cooldown when zero is configured.
+	DefaultCircuitOpenDuration = 30 * time.Second
+	maximumInFlight            = 4_096
+	maximumQueued              = 65_536
 )
 
 // ResilienceConfig bounds process-local concurrency and overload amplification.
 // Zero values select bounded defaults; queuing is disabled unless both queue
 // fields are configured. The adapter never performs retries.
 type ResilienceConfig struct {
-	MaximumInFlight         int
-	MaximumQueued           int
-	MaximumQueueWait        time.Duration
+	// MaximumInFlight bounds request/body permits per client; zero selects 64, maximum 4096.
+	MaximumInFlight int
+	// MaximumQueued bounds waiting callers; zero disables queuing, maximum 65536.
+	MaximumQueued int
+	// MaximumQueueWait bounds each queued wait and must be positive exactly when queuing is
+	// enabled.
+	MaximumQueueWait time.Duration
+	// CircuitFailureThreshold counts transport errors or 429/503 responses, not arbitrary
+	// semantic failures; zero selects 5.
 	CircuitFailureThreshold int
-	CircuitOpenDuration     time.Duration
-	Clock                   func() time.Time
+	// CircuitOpenDuration is a nonnegative cooldown; zero selects 30 seconds.
+	CircuitOpenDuration time.Duration
+	// Clock is borrowed for circuit timing; nil selects time.Now. It must be prompt,
+	// concurrency-safe, and non-panicking.
+	Clock func() time.Time
 }
 
+// ResilienceSnapshot is an operator-wide process-local observation, not fleet admission or
+// a tenant budget.
 type ResilienceSnapshot struct {
-	MaximumInFlight     int
-	InFlight            int
-	Queued              int
-	Admissions          uint64
-	Rejections          uint64
-	CircuitOpen         bool
+	// MaximumInFlight is the configured permit limit.
+	MaximumInFlight int
+	// InFlight counts permits held through response-body EOF/Close.
+	InFlight int
+	// Queued counts current admission waiters.
+	Queued int
+	// Admissions is the cumulative local admitted request count.
+	Admissions uint64
+	// Rejections is the cumulative local queue/circuit refusal count.
+	Rejections uint64
+	// CircuitOpen reports whether cooldown time remains, not whether a half-open probe is active.
+	CircuitOpen bool
+	// ConsecutiveFailures counts classified downstream failures until a success resets it.
 	ConsecutiveFailures int
 }
 
@@ -196,6 +217,8 @@ func (permit *resiliencePermit) complete(response *http.Response, err error, dow
 	})
 }
 
+// ResilienceSnapshot returns nil-safe instance-local counters. It is an operator
+// surface with no tenant authorization and does not wait for active operations.
 func (c *Client) ResilienceSnapshot() ResilienceSnapshot {
 	if c == nil || c.transport == nil || c.transport.resilience == nil {
 		return ResilienceSnapshot{}

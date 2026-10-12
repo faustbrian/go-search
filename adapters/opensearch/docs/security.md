@@ -51,7 +51,7 @@ use separate clients or roles.
 | mapping explosion | bounded canonical `IndexDefinition`, explicit templates, live-definition fingerprint attestation, separately authorized lifecycle | schema owners must constrain dynamic mappings and field cardinality |
 | field disclosure | complete query/projection/highlight/aggregation/suggestion/full-source authorization before resolution | application policy defines which principal may see each field |
 | poisoned documents/stale replay | bounded JSON object/depth/node/duplicate-key validation, external versions, durable pre-resolution write guard, mapping failures classified without reason leakage | source-of-truth validation, authoritative current-document/tombstone storage, and schema policy remain application-owned |
-| backend credential leakage | mutually exclusive secret providers/signing, TLS-only credentials, no URL userinfo, redacted provider/policy/guard/backend errors | operators own secret storage, rotation, and least-privilege roles |
+| backend credential leakage | mutually exclusive secret providers/signing, TLS-only credentials, no URL userinfo, classified provider/policy/backend errors; mutation-guard cancellation chains require caller sanitization | operators own secret storage, rotation, and least-privilege roles |
 
 Every valid search also requires `SearchAuthorizer` approval before the resolver
 or network is reached. The policy sees the full query tree, sort, projection,
@@ -71,9 +71,10 @@ state or a durable tombstone. Guard errors are redacted; cancellation and
 deadline classification remain observable. Omitting the guard disables write
 capabilities and makes `Write` and `Bulk` fail with `ErrWriteDisabled`.
 
-Reindex task cursors are AES-256-GCM encrypted, expire at a fixed deadline, and
-are bound to tenant plus physical source and target. Treat the encryption key as a
-credential, persist cursors unchanged, and never log either value. A lifecycle
+Each reindex task cursor is AES-256-GCM encrypted, has a fixed deadline for that
+token, and is bound to tenant plus physical source and target. Treat the encryption key as a
+credential, persist each returned cursor unchanged, and replace it after an
+incomplete poll renews the lease. Never log either value. A lifecycle
 verifier must compare all records from a stable point-in-time view within its
 hard bound and attest the current live target definition; counts or
 caller-stored fingerprints alone are not sufficient for alias cutover.
@@ -81,6 +82,14 @@ caller-stored fingerprints alone are not sufficient for alias cutover.
 Backend bodies, queries, sources, signed cursors, credentials, and authorization
 errors may contain secrets. Adapter failures expose bounded classifications and
 metadata instead of echoing response bodies or provider errors.
+
+The public Failure formatter omits private cause text, but Unwrap is a separate
+observable surface: if LifecycleMutationGuard returns a cancellation/deadline
+error before calling its operation, the current adapter retains that guard error
+chain. A wrapped context error may therefore expose application details through
+unwrapping even though Error is classified. Guards must return secret-free
+errors, and callers must sanitize chains before logging or tenant disclosure.
+This does not change or qualify the guarded backend outcome.
 
 Label-free does not mean tenant-scoped. `Info`, `Discover`, `Health`,
 `Capacity`, `ResilienceSnapshot`, and configured telemetry describe the shared

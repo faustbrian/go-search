@@ -20,16 +20,25 @@ type ConformanceAdapter interface {
 // ConformanceConfig defines one bounded deterministic shared-semantics run.
 // TenantA and TenantB must resolve to isolated storage for LogicalIndex.
 type ConformanceConfig struct {
-	Adapter      ConformanceAdapter
-	Limits       search.Limits
-	TenantA      string
-	TenantB      string
+	// Adapter is borrowed and must target fresh isolated backend storage.
+	Adapter ConformanceAdapter
+	// Limits must accommodate the fixed fixture sizes and bounded request shapes.
+	Limits search.Limits
+	// TenantA is the first distinct isolated application tenant.
+	TenantA string
+	// TenantB is the second distinct isolated application tenant.
+	TenantB string
+	// LogicalIndex is the isolated fixture index resolved for both tenants.
 	LogicalIndex string
-	Refresh      search.RefreshPolicy
+	// Refresh must be WaitFor or Immediate so fixture writes are visible to reads.
+	Refresh search.RefreshPolicy
 }
 
-// RunConformance proves only semantics declared by both the in-memory fake and
-// production adapters. The caller owns backend setup, teardown, and isolation.
+// RunConformance writes fixed fixtures and checks the selected shared query,
+// tenant, external-version/delete, and partial-bulk outcomes. It is not exhaustive
+// backend/standard conformance and is not read-only. The caller owns fresh isolated
+// storage, mappings, cancellation cooperation, and teardown; errors may include
+// fixture outcomes or adapter errors and are not a redacted telemetry surface.
 func RunConformance(ctx context.Context, config ConformanceConfig) error {
 	if err := validateConformanceConfig(config); err != nil {
 		return err

@@ -2,6 +2,10 @@
 // application contract tests. It does not emulate OpenSearch ranking,
 // analyzers, geo calculations, highlights, aggregations, suggestions, PITs, or
 // cursor consistency and reports those capabilities as unsupported.
+//
+// Start with NewFake for deterministic application tests, or RunConformance for
+// selected fixture-writing checks against isolated storage. No external SDK,
+// service or cgo dependency is introduced by this package.
 package searchtest
 
 import (
@@ -16,8 +20,12 @@ import (
 	"github.com/faustbrian/go-search"
 )
 
+// ErrInvalidFake requires positive valid bounds for initialized test storage.
 var ErrInvalidFake = errors.New("searchtest: valid bounded limits are required")
 
+// Fake is a concurrency-safe process-local test index. Its zero value is unusable;
+// NewFake initializes bounded identity storage, including retained delete versions.
+// It is not a production backend, analyzer, ranker, cursor, or persistence oracle.
 type Fake struct {
 	mu        sync.RWMutex
 	limits    search.Limits
@@ -25,6 +33,9 @@ type Fake struct {
 	versions  map[documentIdentity]uint64
 }
 
+// NewFake initializes a bounded in-memory fake without workers or external resources.
+// Capacity counts identities including deletion tombstones and is shared across
+// tenants/indexes.
 func NewFake(limits search.Limits) (*Fake, error) {
 	if limits.Validate() != nil {
 		return nil, ErrInvalidFake
@@ -36,6 +47,8 @@ func NewFake(limits search.Limits) (*Fake, error) {
 	}, nil
 }
 
+// Capabilities reports only Boolean, Term, Prefix, Exists, Offset, and versioned write
+// semantics after checking context.
 func (f *Fake) Capabilities(ctx context.Context) (search.Capabilities, error) {
 	if err := ctx.Err(); err != nil {
 		return search.Capabilities{}, err
@@ -43,6 +56,7 @@ func (f *Fake) Capabilities(ctx context.Context) (search.Capabilities, error) {
 	return fakeCapabilities(), nil
 }
 
+// Write delegates one operation to Bulk and returns its single item classification.
 func (f *Fake) Write(ctx context.Context, operation search.WriteOperation, refresh search.RefreshPolicy) (search.ItemOutcome, error) {
 	request := search.BulkRequest{Operations: []search.WriteOperation{operation}, Refresh: refresh}
 	result, err := f.Bulk(ctx, request)
@@ -52,6 +66,9 @@ func (f *Fake) Write(ctx context.Context, operation search.WriteOperation, refre
 	return result.Items()[0], nil
 }
 
+// Bulk validates then applies ordered items under one mutex, retaining copied source
+// and monotonic versions including deletes. It checks cancellation before the lock,
+// not per item; refresh is validated but creates no delayed visibility mechanism.
 func (f *Fake) Bulk(ctx context.Context, request search.BulkRequest) (search.BulkResult, error) {
 	if err := ctx.Err(); err != nil {
 		return search.BulkResult{}, err
@@ -109,6 +126,10 @@ func (f *Fake) Bulk(ctx context.Context, request search.BulkRequest) (search.Bul
 	return search.NewBulkResult(items)
 }
 
+// Search snapshots copied documents under a read lock, matches supported value
+// nodes, and sorts by one DocumentIDSortField. Prefix is case-sensitive and
+// byte-based; term numbers compare JSON spelling rather than mathematical value.
+// Cancellation is checked before work, not throughout traversal.
 func (f *Fake) Search(ctx context.Context, request search.Request) (search.Result, error) {
 	if err := ctx.Err(); err != nil {
 		return search.Result{}, err

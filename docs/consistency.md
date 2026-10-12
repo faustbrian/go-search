@@ -20,12 +20,12 @@ concurrent source write may have occurred between the source and index reads.
 report incomplete, and dispatches no repair batch when repair encounters an
 orphan.
 
-`DriftDivergent` means the same ID and external version have different canonical
-source digests. This is evidence of poisoned, nondeterministic, or corrupted
-derived state, not a newer-version decision. Repair rewrites the authoritative
-source at that same version only when the adapter can deterministically replace
-it; otherwise the run remains incomplete and requires a higher authoritative
-version. Run reconciliation again after every repair batch and require a second
+`DriftDivergent` reports either an index version ahead of the authoritative
+source snapshot or equal versions with different canonical source digests.
+The current reconciler never overwrites divergent records. Resolve source
+snapshot/version allocation or corrupted derived state through application
+policy; selected missing/stale repair completion does not establish zero drift.
+Run reconciliation again after every repair batch and require a second
 complete zero-drift pass before cutover or cleanup.
 
 Applications that delete orphans must use `NewReconcilerWithDeletionGuard` and

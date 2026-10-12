@@ -15,7 +15,7 @@ type WriteAuthorization struct {
 	refresh    search.RefreshPolicy
 }
 
-// Operations returns every write in original bulk position order.
+// Operations returns an independent source copy for every write in original position order.
 func (authorization WriteAuthorization) Operations() []search.WriteOperation {
 	return cloneWriteOperations(authorization.operations)
 }
@@ -28,12 +28,15 @@ func (authorization WriteAuthorization) Refresh() search.RefreshPolicy {
 // WriteGuard validates every operation against application-owned durable
 // current versions or tombstones. Implementations must be concurrency-safe.
 type WriteGuard interface {
+	// AuthorizeWrite checks every copied mutation against durable current state/tombstones
+	// before index resolution; it supplies policy, not a backend transaction.
 	AuthorizeWrite(context.Context, WriteAuthorization) error
 }
 
 // WriteGuardFunc adapts a function to WriteGuard.
 type WriteGuardFunc func(context.Context, WriteAuthorization) error
 
+// AuthorizeWrite delegates directly to the wrapped guard; nil functions panic.
 func (authorize WriteGuardFunc) AuthorizeWrite(ctx context.Context, request WriteAuthorization) error {
 	return authorize(ctx, request)
 }

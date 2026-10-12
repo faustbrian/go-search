@@ -25,13 +25,16 @@ var (
 // DiscoveryResult reports bounded topology counts without exposing endpoint
 // labels to metrics or logs.
 type DiscoveryResult struct {
+	// Discovered counts accepted eligible endpoints, not every reported cluster node.
 	Discovered int
-	Excluded   int
+	// Excluded counts nodes without HTTP or dedicated manager-only roles.
+	Excluded int
 }
 
 // Discover replaces the active endpoint set atomically after every eligible
 // node passes the configured trust policy. It performs one request and owns no
-// timer or background goroutine.
+// timer or background goroutine. Hostname suffix checks do not resolve or pin DNS;
+// operators own DNS/proxy routing. Rejected refresh leaves the prior pool intact.
 func (c *Client) Discover(ctx context.Context) (discoveryResult DiscoveryResult, err error) {
 	if ctx == nil {
 		return DiscoveryResult{}, ErrContextRequired

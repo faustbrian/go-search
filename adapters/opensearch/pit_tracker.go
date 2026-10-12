@@ -10,7 +10,7 @@ import (
 
 const (
 	// DefaultMaximumOpenPointInTimes bounds abandoned cursor resources per
-	// client unless the application selects a smaller explicit budget.
+	// client unless the application selects an explicit budget.
 	DefaultMaximumOpenPointInTimes = 64
 	// MaximumOpenPointInTimes is the largest accepted per-client PIT budget.
 	MaximumOpenPointInTimes = 4_096
@@ -30,8 +30,10 @@ var (
 // Open excludes cursors created by another client instance and cursors whose
 // signed expiry has elapsed.
 type PointInTimeSnapshot struct {
+	// Maximum is the per-client configured lease limit.
 	Maximum int
-	Open    int
+	// Open counts local live/reserved leases after expiry reaping, not confirmed server resources.
+	Open int
 }
 
 type pointInTimeLease struct {
@@ -41,6 +43,9 @@ type pointInTimeLease struct {
 	inUse     bool
 }
 
+// A local ownership tracker, not distributed replay coordination or backend
+// deletion. Expiry/Close release bookkeeping only; callback clocks run outside
+// the lock because application clocks may reenter operator snapshot methods.
 type pointInTimeTracker struct {
 	codec   *search.CursorCodec
 	maximum int

@@ -9,6 +9,9 @@ import (
 	"github.com/faustbrian/go-search"
 )
 
+// FuzzDocumentSource probes arbitrary source bytes against 4096-byte admission
+// and default JSON structure limits. It checks panic resistance; acceptance/error
+// classification is covered by deterministic document cases, not asserted here.
 func FuzzDocumentSource(f *testing.F) {
 	f.Add([]byte(`{"name":"Helsinki"}`))
 	f.Add([]byte(`null`))
@@ -22,6 +25,9 @@ func FuzzDocumentSource(f *testing.F) {
 	})
 }
 
+// FuzzIndexDefinitionJSON probes paired object inputs within 4096 combined bytes,
+// depth 16 and 256 shared nodes, including Unicode names/duplicate keys. It is a
+// panic-resistance boundary, not an independent canonicalization oracle.
 func FuzzIndexDefinitionJSON(f *testing.F) {
 	f.Add([]byte(`{"index":{"refresh_interval":"1s"}}`), []byte(`{"properties":{"näme":{"type":"keyword"}}}`))
 	f.Add([]byte(`{"same":1,"same":2}`), []byte(`{}`))
@@ -38,6 +44,9 @@ func FuzzIndexDefinitionJSON(f *testing.F) {
 	})
 }
 
+// FuzzCursorDecode probes arbitrary token text under a fixed clock/key/binding
+// and 4096-byte token cap. It checks panic resistance, not cryptographic security
+// or successful backend resource ownership.
 func FuzzCursorDecode(f *testing.F) {
 	now := time.Unix(1_800_000_000, 0)
 	codec, _ := search.NewCursorCodec([]byte("0123456789abcdef0123456789abcdef"), func() time.Time { return now }, 4096)
@@ -51,6 +60,9 @@ func FuzzCursorDecode(f *testing.F) {
 	})
 }
 
+// FuzzRequestValidateAndFingerprint probes a bounded hostile typed graph derived
+// from at most 4096 bytes. It asserts repeatable fingerprints, fingerprints for
+// validated requests, and exclusion of cursor bytes from continuation binding.
 func FuzzRequestValidateAndFingerprint(f *testing.F) {
 	for selector := byte(0); selector < 10; selector++ {
 		f.Add([]byte{selector, 'a'})
@@ -87,6 +99,9 @@ func FuzzRequestValidateAndFingerprint(f *testing.F) {
 	})
 }
 
+// hostileRequest bounds recursive depth/collections independently of input length
+// while distributing hostile UTF-8, field, raw JSON and pagination shapes across
+// recognized nodes. It creates input, not an independent expected-result oracle.
 func hostileRequest(input []byte) search.Request {
 	selector := byte(0)
 	if len(input) > 0 {

@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+### Documentation
+
+- Clarify per-request transport admission, caller-owned trust and lifecycle
+  callbacks, formatter versus retained guard-cause privacy, PIT shutdown/cleanup
+  limits, and renewed encrypted task cursors
+  without changing the supported server/client matrix or executable behavior.
+
 ## 1.1.0 - 2026-10-06
 
 ### Changed

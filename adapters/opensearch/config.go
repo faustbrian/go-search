@@ -1,6 +1,18 @@
 // Package opensearch implements the production OpenSearch adapter for search.
-// It uses the official OpenSearch Go client API while owning endpoint trust,
-// authentication, retries, and transport lifecycle explicitly.
+// It uses opensearch-go/v4 4.8.0 for the exact OpenSearch 2.19.6/3.8.0 matrix,
+// while owning request admission, authentication, decoding, and idle-resource
+// lifecycle. Applications own tenant policy, durable versions, migration fences,
+// semantic verification, retries, and deployment. The maintained policy register
+// is docs/specification-decisions.md (OPENSEARCH-DEC-001 through -023).
+//
+// No background worker is started. Operator-wide Info, Discover, Health,
+// Capacity, snapshots, and telemetry are not tenant-authorized APIs. Bounds are
+// per client/request, not fleet-wide heap, query-cost, or shutdown deadlines.
+// Callback cooperation and caller-supplied transport internals are trust boundaries.
+//
+// Start with New and explicit Config policies. This module introduces the official
+// OpenSearch Go client and signer dependency; a configured service is required for
+// real operations but not construction. No cgo or service process is started.
 package opensearch
 
 import (
@@ -58,13 +70,18 @@ var (
 
 // BasicCredentials is one rotation-aware authentication snapshot.
 type BasicCredentials struct {
+	// Username is nonempty per-request authentication material; never log it.
 	Username string
+	// Password is nonempty per-request authentication material; strings are not erased on
+	// shutdown.
 	Password string
 }
 
 // BasicCredentialsProvider supplies current least-privilege credentials per
 // request. Implementations must be concurrency-safe.
 type BasicCredentialsProvider interface {
+	// Credentials returns one current snapshot using the request context; failures are reduced
+	// to ErrCredentials.
 	Credentials(context.Context) (BasicCredentials, error)
 }
 
@@ -95,46 +112,82 @@ const (
 
 // ProxyPolicy defines whether and how OpenSearch requests may use a proxy.
 type ProxyPolicy struct {
+	// Mode selects explicit adapter-managed proxy behavior; custom transports retain their own
+	// policy.
 	Mode ProxyMode
-	URL  *url.URL
+	// URL is required only for ProxyExplicit and must be a credential-free HTTP(S) authority.
+	URL *url.URL
 }
 
 // DiscoveryPolicy authorizes explicit topology refreshes. Discovery is
 // disabled when MaximumNodes is zero. Every returned data node must match a
 // DNS suffix or IP prefix before credentials can be forwarded to it.
 type DiscoveryPolicy struct {
-	MaximumNodes       int
+	// MaximumNodes caps accepted eligible endpoints; zero disables discovery, not seed access.
+	MaximumNodes int
+	// AllowedDNSSuffixes is a copied dot-prefixed lowercase hostname suffix allowlist, not
+	// DNS/IP pinning.
 	AllowedDNSSuffixes []string
-	AllowedCIDRs       []netip.Prefix
+	// AllowedCIDRs is a copied masked IP-prefix allowlist; no DNS resolution is performed for
+	// hostname suffix rules.
+	AllowedCIDRs []netip.Prefix
 }
 
 // Config defines explicit OpenSearch authorities and resource ownership. The
 // official client's retry and environment-driven transport layers are not used;
-// every adapter request performs exactly one RoundTrip.
+// each adapter-created HTTP request invokes the configured RoundTripper once.
+// A public operation can create multiple requests; transport internals may retry.
+// Mutable configuration containers are copied, while providers, signers, clocks,
+// transports, codecs, and policy callbacks are borrowed. They must be prompt,
+// concurrency-safe, and context-cooperative; the adapter cannot contain all of
+// their panics or forcibly stop them. Keep input graphs stable during New.
 type Config struct {
+	// Endpoints is a copied nonempty seed list. Normalized duplicate authorities are rejected.
 	Endpoints []string
 
+	// BasicCredentials is a borrowed per-request provider, mutually exclusive with Signer.
 	BasicCredentials BasicCredentialsProvider
-	Signer           signer.Signer
+	// Signer is a borrowed request signer; it must honor request context and not expose
+	// credentials.
+	Signer signer.Signer
 
-	TLS       *tls.Config
-	Proxy     ProxyPolicy
+	// TLS is cloned for adapter-managed transports; InsecureSkipVerify here is rejected.
+	// Existing custom transport trust remains caller-owned.
+	TLS *tls.Config
+	// Proxy configures only adapter-managed transport clones, not arbitrary borrowed internals.
+	Proxy ProxyPolicy
+	// Discovery is copied explicit topology-refresh authority; no periodic refresh is started.
 	Discovery DiscoveryPolicy
 
-	Transport          http.RoundTripper
+	// Transport is borrowed or wrapped according to TransportOwnership; owned *http.Transport
+	// inputs are cloned.
+	Transport http.RoundTripper
+	// TransportOwnership controls idle-connection cleanup, not cancellation/join of active
+	// requests.
 	TransportOwnership TransportOwnership
 
-	AllowInsecureHTTP    bool
-	RequestTimeout       time.Duration
+	// AllowInsecureHTTP allows unauthenticated loopback HTTP only, not arbitrary plaintext
+	// authorities.
+	AllowInsecureHTTP bool
+	// RequestTimeout bounds each network request context; policy/resolver callbacks run before
+	// that timeout.
+	RequestTimeout time.Duration
+	// MaximumResponseBytes caps buffered decoded response bytes, not aggregate allocation or
+	// backend work.
 	MaximumResponseBytes int64
-	Search               *SearchConfig
-	Lifecycle            *LifecycleConfig
-	Resilience           ResilienceConfig
-	Telemetry            *TelemetryConfig
+	// Search is optional copied configuration; its dependencies are borrowed. Nil disables
+	// search/writes.
+	Search *SearchConfig
+	// Lifecycle is optional copied configuration; its authorizer is required when supplied.
+	Lifecycle *LifecycleConfig
+	// Resilience configures instance-local admission/circuit bounds and borrowed clock.
+	Resilience ResilienceConfig
+	// Telemetry is optional copied observer configuration with borrowed observer/clock.
+	Telemetry *TelemetryConfig
 }
 
-// Client is a concurrency-safe OpenSearch adapter. Close is idempotent and
-// releases only adapter-owned idle connections.
+// Client coordinates concurrent calls when borrowed dependencies satisfy their
+// concurrency contracts. Construct it with New; its zero value is unusable.
 type Client struct {
 	client               *official.Client
 	transport            *poolTransport
@@ -152,7 +205,9 @@ type Client struct {
 	closeOnce sync.Once
 }
 
-// New validates the complete trust and ownership policy without network IO.
+// New validates configuration without network I/O and copies retained container
+// state. It does not qualify credentials, callback durability/cooperation, custom
+// transport TLS/proxy internals, server availability, or an actual deployment.
 func New(config Config) (*Client, error) {
 	addresses, insecure, err := validateConfig(config)
 	if err != nil {
@@ -252,7 +307,10 @@ func cloneSearchConfig(config *SearchConfig) *SearchConfig {
 	return &copyConfig
 }
 
-// Close releases only resources owned by the adapter.
+// Close is nil-safe and idempotent, marks the client closed, clears local PIT
+// tracking, and closes adapter-owned idle connections. It does not cancel or join
+// admitted operations or delete backend PITs. Policy callbacks may run before a
+// later closed check; already admitted transport work can finish after return.
 func (c *Client) Close() error {
 	if c == nil {
 		return nil
@@ -548,6 +606,8 @@ func (transport *poolTransport) Stream(request *http.Request) (*http.Response, e
 	return response, roundTripErr
 }
 
+// Admission covers body lifetime, not just response headers. EOF or Close
+// releases the permit once; a body that never cooperates can retain capacity.
 type admissionResponseBody struct {
 	io.ReadCloser
 	finishOnce sync.Once

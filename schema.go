@@ -13,8 +13,11 @@ import (
 )
 
 var (
+	// ErrInvalidIndexDefinition rejects unsafe physical names or invalid bounded definition
+	// objects.
 	ErrInvalidIndexDefinition = errors.New("search: invalid index definition")
-	ErrSchemaLimit            = errors.New("search: index definition exceeds size limit")
+	// ErrSchemaLimit rejects combined settings/mappings bytes beyond MaxSourceBytes.
+	ErrSchemaLimit = errors.New("search: index definition exceeds size limit")
 )
 
 // IndexDefinition is an immutable backend-neutral settings and mapping
@@ -29,7 +32,10 @@ type IndexDefinition struct {
 
 // NewIndexDefinition validates and canonicalizes bounded JSON object settings
 // and mappings. The fingerprint excludes the physical index name so equivalent
-// generations compare equal.
+// generations compare equal. Names are at most 255 UTF-8 bytes and reject
+// uppercase, whitespace/control and reserved path characters/prefixes; lowercase
+// Unicode is accepted here, while individual adapters may impose ASCII grammar.
+// Settings/mappings share one node budget; backend defaults are not materialized.
 func NewIndexDefinition(name string, settings, mappings json.RawMessage, limits Limits) (IndexDefinition, error) {
 	if !validIndexName(name) {
 		return IndexDefinition{}, ErrInvalidIndexDefinition
@@ -49,6 +55,10 @@ func NewIndexDefinition(name string, settings, mappings json.RawMessage, limits 
 	if err != nil {
 		return IndexDefinition{}, errors.Join(ErrInvalidIndexDefinition, err)
 	}
+	// Wire contract v1 is protected by
+	// TestIndexDefinitionFingerprintIsCanonicalAndCompatibilityIsExplicit. The
+	// separator prevents settings/mappings concatenation ambiguity; names and
+	// unmaterialized backend defaults deliberately do not enter this identity.
 	hash := sha256.New()
 	_, _ = hash.Write(canonicalSettings)
 	_, _ = hash.Write([]byte{0})
@@ -59,29 +69,47 @@ func NewIndexDefinition(name string, settings, mappings json.RawMessage, limits 
 	}, nil
 }
 
+// Name returns the retained physical name.
 func (d IndexDefinition) Name() string { return d.name }
+
+// Settings returns an independent copy of canonical object JSON.
 func (d IndexDefinition) Settings() json.RawMessage {
 	return append(json.RawMessage(nil), d.settings...)
 }
+
+// Mappings returns an independent copy of canonical object JSON.
 func (d IndexDefinition) Mappings() json.RawMessage {
 	return append(json.RawMessage(nil), d.mappings...)
 }
+
+// Fingerprint returns wire-contract-v1 lowercase SHA-256 of canonical settings,
+// a zero byte, then mappings. It excludes names and implicit backend defaults;
+// Go JSON number spellings remain distinct, and this is not RFC 8785 canonicalization.
 func (d IndexDefinition) Fingerprint() string { return d.fingerprint }
 
+// CompatibilityKind is the conservative byte-definition compatibility decision.
 type CompatibilityKind string
 
 const (
-	Compatible      CompatibilityKind = "compatible"
+	// Compatible means the retained fingerprints compare equal, including two zero definitions.
+	Compatible CompatibilityKind = "compatible"
+	// ReindexRequired means definition fingerprints differ; no in-place compatibility
+	// inference is made.
 	ReindexRequired CompatibilityKind = "reindex_required"
 )
 
+// Compatibility reports canonical equality or an explicit reindex requirement; it is not
+// backend mapping analysis.
 type Compatibility struct {
-	Kind    CompatibilityKind
+	// Kind selects equality or an explicit migration requirement.
+	Kind CompatibilityKind
+	// Reasons lists changed canonical settings/mappings in a caller-owned slice.
 	Reasons []string
 }
 
 // CompareDefinitions reports whether two physical generations have identical
-// shared schema semantics. Any difference requires an explicit reindex plan;
+// canonical definition bytes, excluding names. Any difference requires an explicit reindex
+// plan;
 // adapters may offer a more detailed backend-native compatibility analysis.
 func CompareDefinitions(current, target IndexDefinition) Compatibility {
 	if current.fingerprint == target.fingerprint {
@@ -106,6 +134,7 @@ func canonicalBoundedJSONObject(value json.RawMessage, maximumDepth int, remaini
 
 func canonicalJSONObject(value json.RawMessage) (json.RawMessage, error) {
 	decoder := json.NewDecoder(bytes.NewReader(value))
+	// Preserve number text; sorted object keys remove key-order differences only.
 	decoder.UseNumber()
 	var decoded any
 	if err := decoder.Decode(&decoded); err != nil {

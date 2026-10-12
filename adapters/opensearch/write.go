@@ -13,7 +13,10 @@ import (
 
 // Write applies one externally versioned full-document mutation. Update is
 // rejected because OpenSearch cannot preserve the shared update-existing
-// contract together with external versioning.
+// contract together with external versioning. Source is copied before guard
+// callbacks and resolved to an exact generation. No adapter retry is made;
+// post-dispatch transport/malformed acknowledgements can return OutcomeUnknown
+// with an error, so callers must reconcile durable identity/version before replay.
 func (c *Client) Write(ctx context.Context, operation search.WriteOperation, refresh search.RefreshPolicy) (search.ItemOutcome, error) {
 	if ctx == nil {
 		return search.ItemOutcome{}, ErrContextRequired

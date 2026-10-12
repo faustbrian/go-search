@@ -1,3 +1,17 @@
+// Package search defines bounded contracts for rebuildable derived indexes,
+// typed queries, authenticated cursors, projections, migration, and reconciliation.
+// It does not own authoritative application data, durable outboxes, authorization,
+// retries, or backend deployment. Identifiers are validated as UTF-8, not normalized
+// or authenticated; adapters and application callbacks enforce tenant authority.
+//
+// Validated immutable values copy retained mutable input, but public request,
+// document, hit, and report structs remain mutable. Keep borrowed input stable
+// during calls. Callbacks are synchronous and must cooperate with context
+// cancellation; the core does not contain their panics or impose execution timeouts.
+//
+// Start with DefaultLimits and NewDocument, then construct typed Request values
+// for a chosen Searcher/Indexer. This module uses only Go standard-library code;
+// the optional OpenSearch adapter is a separate module and owns its SDK/service boundary.
 package search
 
 import (
@@ -9,33 +23,54 @@ import (
 )
 
 var (
-	ErrTenantRequired      = errors.New("search: tenant is required")
-	ErrTenantTooLarge      = errors.New("search: tenant exceeds limit")
-	ErrIndexRequired       = errors.New("search: index is required")
-	ErrIndexTooLarge       = errors.New("search: index exceeds limit")
-	ErrIDRequired          = errors.New("search: document ID is required")
-	ErrIDTooLarge          = errors.New("search: document ID exceeds limit")
-	ErrVersionRequired     = errors.New("search: external version is required")
-	ErrSourceRequired      = errors.New("search: document source is required")
-	ErrSourceTooLarge      = errors.New("search: document source exceeds limit")
-	ErrInvalidSource       = errors.New("search: document source must be a JSON object")
-	ErrJSONDepthLimit      = errors.New("search: JSON nesting depth exceeds limit")
-	ErrJSONNodeLimit       = errors.New("search: JSON object-field or array-element count exceeds limit")
+	// ErrTenantRequired rejects an empty or invalid UTF-8 tenant label.
+	ErrTenantRequired = errors.New("search: tenant is required")
+	// ErrTenantTooLarge rejects tenant bytes beyond MaxTenantBytes.
+	ErrTenantTooLarge = errors.New("search: tenant exceeds limit")
+	// ErrIndexRequired rejects an empty or invalid UTF-8 logical index.
+	ErrIndexRequired = errors.New("search: index is required")
+	// ErrIndexTooLarge rejects index bytes beyond MaxIndexBytes.
+	ErrIndexTooLarge = errors.New("search: index exceeds limit")
+	// ErrIDRequired rejects an empty or invalid UTF-8 document ID.
+	ErrIDRequired = errors.New("search: document ID is required")
+	// ErrIDTooLarge rejects document ID bytes beyond MaxIDBytes.
+	ErrIDTooLarge = errors.New("search: document ID exceeds limit")
+	// ErrVersionRequired rejects zero external version; authoritative ordering is caller-owned.
+	ErrVersionRequired = errors.New("search: external version is required")
+	// ErrSourceRequired rejects nil source; nonnil empty source is instead invalid JSON.
+	ErrSourceRequired = errors.New("search: document source is required")
+	// ErrSourceTooLarge rejects source bytes beyond MaxSourceBytes.
+	ErrSourceTooLarge = errors.New("search: document source exceeds limit")
+	// ErrInvalidSource classifies non-object or malformed source, possibly joined with a
+	// structural cause.
+	ErrInvalidSource = errors.New("search: document source must be a JSON object")
+	// ErrJSONDepthLimit identifies nesting deeper than the selected JSON limit.
+	ErrJSONDepthLimit = errors.New("search: JSON nesting depth exceeds limit")
+	// ErrJSONNodeLimit identifies member/element count beyond the selected shared JSON budget.
+	ErrJSONNodeLimit = errors.New("search: JSON object-field or array-element count exceeds limit")
+	// ErrDuplicateJSONKey identifies a repeated object key at any validated nesting level.
 	ErrDuplicateJSONKey    = errors.New("search: JSON object contains a duplicate key")
 	errMalformedJSONObject = errors.New("search: malformed JSON object")
 )
 
-// Document is a rebuildable source projection with a stable ID and a
-// source-owned positive external version. Source is owned by this value.
+// Document is a mutable source-versioned search document. NewDocument copies
+// Source; struct literals and subsequent field assignments do not establish ownership.
 type Document struct {
-	Tenant  string
-	Index   string
-	ID      string
+	// Tenant is the application tenant label, not proof of authorization.
+	Tenant string
+	// Index is the logical index identity interpreted by an adapter.
+	Index string
+	// ID is the stable document identity within Tenant and Index.
+	ID string
+	// Version is a positive authoritative external version; callers own monotonic allocation.
 	Version uint64
-	Source  json.RawMessage
+	// Source is JSON object data. NewDocument retains an independent copy.
+	Source json.RawMessage
 }
 
-// NewDocument validates and copies a bounded JSON object document.
+// NewDocument validates nonempty UTF-8 identities, a positive version, and a bounded
+// JSON object without duplicate keys at any depth. It copies the original source
+// bytes, including whitespace; it does not normalize identifiers or authorize writes.
 func NewDocument(tenant, index, id string, version uint64, source json.RawMessage, limits Limits) (Document, error) {
 	if tenant == "" || !utf8.ValidString(tenant) {
 		return Document{}, ErrTenantRequired
@@ -90,6 +125,7 @@ func validateBoundedJSONObject(value json.RawMessage, maximumDepth int, remainin
 		return errMalformedJSONObject
 	}
 	decoder := json.NewDecoder(bytes.NewReader(value))
+	// Preserve decimal spelling rather than rounding through float64 while walking.
 	decoder.UseNumber()
 	opening, err := decoder.Token()
 	if err != nil {

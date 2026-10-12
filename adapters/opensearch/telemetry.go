@@ -7,54 +7,95 @@ import (
 	"time"
 )
 
+// TelemetryCategory is a fixed transport/admission classification, not a full
+// operation-success assertion.
 type TelemetryCategory string
 
 const (
-	TelemetrySuccess      TelemetryCategory = "success"
-	TelemetryTransport    TelemetryCategory = "transport"
-	TelemetryCredentials  TelemetryCategory = "credentials"
+	// TelemetrySuccess means no transport/admission error or HTTP >=400, not a validated
+	// semantic result.
+	TelemetrySuccess TelemetryCategory = "success"
+	// TelemetryTransport identifies an unclassified transport error.
+	TelemetryTransport TelemetryCategory = "transport"
+	// TelemetryCredentials identifies sanitized provider/signing refusal.
+	TelemetryCredentials TelemetryCategory = "credentials"
+	// TelemetryBackpressure identifies local admission refusal.
 	TelemetryBackpressure TelemetryCategory = "backpressure"
-	TelemetryCircuitOpen  TelemetryCategory = "circuit_open"
-	TelemetryOverloaded   TelemetryCategory = "overloaded"
-	TelemetryHTTPFailure  TelemetryCategory = "http_failure"
-	TelemetrySemantic     TelemetryCategory = "semantic"
+	// TelemetryCircuitOpen identifies local circuit refusal.
+	TelemetryCircuitOpen TelemetryCategory = "circuit_open"
+	// TelemetryOverloaded identifies observed 429/503.
+	TelemetryOverloaded TelemetryCategory = "overloaded"
+	// TelemetryHTTPFailure identifies another HTTP status >=400.
+	TelemetryHTTPFailure TelemetryCategory = "http_failure"
+	// TelemetrySemantic accompanies a separate semantic Signal.
+	TelemetrySemantic TelemetryCategory = "semantic"
 )
 
+// TelemetrySignal names an additional semantic event after transport completion.
 type TelemetrySignal string
 
 const (
+	// TelemetryUnknownWriteOutcome reports uncertain mutation receipt.
 	TelemetryUnknownWriteOutcome TelemetrySignal = "unknown_write_outcomes"
-	TelemetryPartialSearch       TelemetrySignal = "partial_searches"
-	TelemetryPITCleanupFailure   TelemetrySignal = "pit_cleanup_failures"
-	TelemetryCutoverFailure      TelemetrySignal = "cutover_failures"
+	// TelemetryPartialSearch reports partial search evidence.
+	TelemetryPartialSearch TelemetrySignal = "partial_searches"
+	// TelemetryPITCleanupFailure reports a failed PIT deletion acknowledgement.
+	TelemetryPITCleanupFailure TelemetrySignal = "pit_cleanup_failures"
+	// TelemetryCutoverFailure reports cutover failure, not proof the alias was unchanged.
+	TelemetryCutoverFailure TelemetrySignal = "cutover_failures"
 )
 
-// TelemetryEvent contains only stable low-cardinality adapter state. It never
+// TelemetryEvent is mutable telemetry metadata. Adapter-created events contain
+// only fixed low-cardinality state; user-constructed events are not sanitized.
+// Adapter-created events never
 // contains endpoints, tenant labels, index names, query fields, request bodies,
 // credentials, OpenSearch reason strings, or node IDs.
 type TelemetryEvent struct {
-	Operation   Operation
-	Category    TelemetryCategory
-	Signal      TelemetrySignal
-	Status      int
-	Duration    time.Duration
-	InFlight    int
-	Queued      int
+	// Operation identifies the fixed adapter request category.
+	Operation Operation
+	// Category classifies transport/admission or semantic signal emission.
+	Category TelemetryCategory
+	// Signal identifies an optional semantic condition; ordinary transport events leave it empty.
+	Signal TelemetrySignal
+	// Status is the observed response status, zero without response.
+	Status int
+	// Duration covers transport admission/body completion and callback clock timing, not full
+	// public-operation latency; signals leave it zero.
+	Duration time.Duration
+	// InFlight is the local permit count at observation.
+	InFlight int
+	// Queued is the local waiter count at observation.
+	Queued int
+	// CircuitOpen is the local cooldown observation.
 	CircuitOpen bool
 }
 
+// TelemetryObserver is a borrowed synchronous operator callback. Adapter invocation ignores
+// its errors and contains panics, not blocking.
 type TelemetryObserver interface {
+	// Observe is called inline with request context; it must return promptly and be
+	// concurrency-safe. Observer errors/panics do not fail the operation.
 	Observe(context.Context, TelemetryEvent) error
 }
+
+// TelemetryObserverFunc adapts a function to TelemetryObserver; nil invocation panics.
 type TelemetryObserverFunc func(context.Context, TelemetryEvent) error
 
+// Observe delegates to the wrapped function directly; panic/error containment occurs only
+// at adapter invocation.
 func (observe TelemetryObserverFunc) Observe(ctx context.Context, event TelemetryEvent) error {
 	return observe(ctx, event)
 }
 
+// TelemetryConfig enables synchronous telemetry with borrowed observer and clock; both are
+// required when supplied.
 type TelemetryConfig struct {
+	// Observer is borrowed; blocking delays operation completion even though errors/panics are
+	// ignored.
 	Observer TelemetryObserver
-	Clock    func() time.Time
+	// Clock is borrowed for nonnegative duration calculation; its panics are not contained by
+	// observer recovery.
+	Clock func() time.Time
 }
 
 type telemetry struct {
