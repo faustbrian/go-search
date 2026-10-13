@@ -1,5 +1,8 @@
 # Bulk ingestion and rebuilds
 
+[Documentation map](index.md) · [Repository README](../README.md)
+[Next: API and ownership](api.md)
+
 Bound bulk operations by item count and encoded bytes. Each index, update,
 upsert, or delete uses a stable document ID and explicit external version.
 Core byte admission uses remaining-budget arithmetic, so hostile configured

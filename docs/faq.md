@@ -1,5 +1,8 @@
 # FAQ
 
+[Documentation map](index.md) · [Repository README](../README.md)
+[Next: API and ownership](api.md)
+
 ## Is relevance portable?
 
 No. Core queries are portable intent; analyzer and ranking behavior belongs to

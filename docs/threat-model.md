@@ -1,5 +1,8 @@
 # Search threat model
 
+[Documentation map](index.md) · [Repository README](../README.md)
+[Next: Operations and capacity](operations.md)
+
 Model version: 1. Reviewed source baseline:
 `a93ac8817a9a172ffe552f3a4c1694bb74bd7e9b` (remote main, 2026-10-02).
 Owner: go-search maintainers. This document records a source audit, not a

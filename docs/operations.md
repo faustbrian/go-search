@@ -1,5 +1,8 @@
 # Operations and capacity
 
+[Documentation map](index.md) · [Repository README](../README.md)
+[Next: API and ownership](api.md)
+
 Record request duration, backend status class, retries, rejected and unknown
 bulk items, bytes, hit count, partial shards, PIT creation/cleanup, migration
 state, reconciliation drift, and alias changes. Correlate without logging query

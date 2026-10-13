@@ -1,5 +1,8 @@
 # Schema migrations
 
+[Documentation map](index.md) · [Repository README](../README.md)
+[Next: Track and Location adoption](adoption.md)
+
 An `IndexDefinition` contains an immutable physical name, mapping, settings,
 and deterministic fingerprint. Compatibility checks decide whether an existing
 index is reusable or requires migration.

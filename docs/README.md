@@ -1,5 +1,8 @@
 # Documentation
 
+[Documentation map](index.md) · [Repository README](../README.md)
+[Next: Documentation map](index.md)
+
 - [API and ownership](api.md)
 - [PostgreSQL or search](postgresql-vs-search.md)
 - [Consistency and source of truth](consistency.md)

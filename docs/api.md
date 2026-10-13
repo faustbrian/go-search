@@ -1,5 +1,8 @@
 # API and ownership
 
+[Documentation map](index.md) · [Repository README](../README.md)
+[Next: Operations and capacity](operations.md)
+
 ## Complete shared-semantics inventory
 
 | Boundary | Declared shared surface |

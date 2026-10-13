@@ -1,5 +1,8 @@
 # Source documentation audit
 
+[Documentation map](index.md) · [Repository README](../README.md)
+[Next: API and ownership](api.md)
+
 ## Outcome, owner, consumers, risks and smallest checks
 
 Base 1fc8f9829b650419b27f4e8c170d0d1ffe27b1da; fresh-main detached task worktree. Tier A comments/docs only.

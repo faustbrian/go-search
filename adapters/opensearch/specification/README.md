@@ -1,5 +1,8 @@
 # OpenSearch specification conformance
 
+[Documentation map](../../../docs/index.md) · [Repository README](../../../README.md)
+[Next: Documentation map](../../../docs/index.md)
+
 The [decision register](../docs/specification-decisions.md), [source pins](manifest.tsv), authority monitoring, machine conformance, and decision history govern the exact OpenSearch adapter matrix.
 
 Decision-history and changelog digests come from the validator's canonical

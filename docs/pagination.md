@@ -1,5 +1,8 @@
 # Pagination
 
+[Documentation map](index.md) · [Repository README](../README.md)
+[Next: API and ownership](api.md)
+
 Cursor pagination is first class. A cursor is authenticated, expiring, bound to
 tenant, logical index, index-definition fingerprint, normalized query fingerprint,
 stable sort, page limits, point-in-time ID, and search-after values. Tampering,

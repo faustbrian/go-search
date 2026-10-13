@@ -1,5 +1,8 @@
 # PostgreSQL or search
 
+[Documentation map](index.md) · [Repository README](../README.md)
+[Next: API and ownership](api.md)
+
 Prefer PostgreSQL when the query is relational, results must reflect the same
 transaction as a write, the corpus is modest, and built-in full-text ranking
 and indexes meet the product contract. This avoids projection lag and a second

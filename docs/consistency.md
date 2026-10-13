@@ -1,5 +1,8 @@
 # Consistency and source of truth
 
+[Documentation map](index.md) · [Repository README](../README.md)
+[Next: API and ownership](api.md)
+
 An index is rebuildable derived state. Persist application state and an outbox
 event atomically, then project the event with a stable idempotency key and
 monotonic document version. Acknowledgement means the backend accepted the

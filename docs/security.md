@@ -1,5 +1,8 @@
 # Security
 
+[Documentation map](index.md) · [Repository README](../README.md)
+[Next: Operations and capacity](operations.md)
+
 See the versioned [repository threat model](threat-model.md) for audited
 boundaries, residual owners, review conditions and evidence limitations.
 

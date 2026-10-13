@@ -1,5 +1,8 @@
 # OpenSearch adapter documentation
 
+[Documentation map](../../../docs/index.md) · [Repository README](../../../README.md)
+[Next: Documentation map](../../../docs/index.md)
+
 The [module entry point](../README.md) covers installation, construction,
 ownership, lifecycle, errors, supported Go, platforms, backend and protocol
 versions, security, performance, testing, support, and ecosystem navigation.
