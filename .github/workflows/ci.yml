@@ -13,6 +13,11 @@ on:
         required: false
         default: false
         type: boolean
+      release_module:
+        description: Rehearse one module directory; blank selects every releasable module
+        required: false
+        default: ''
+        type: string
 
 permissions:
   contents: read
@@ -27,6 +32,7 @@ jobs:
       source_documentation: check
       public_dependencies: true
       release_dry_run: ${{ inputs.release_dry_run || false }}
+      release_module: ${{ inputs.release_module || '' }}
 
   required:
     name: Required

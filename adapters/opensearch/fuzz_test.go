@@ -90,9 +90,9 @@ func FuzzBulkResponseBoundary(f *testing.F) {
 }
 
 // FuzzLifecycleResponseBoundary constructs bounded synthetic lifecycle responses.
-// The supplied configuration currently lacks MutationGuard, so CreateIndex can
-// refuse before response decoding. This target alone is not decoder exploration;
-// lifecycle malformed-response cases require their deterministic evidence.
+// A synchronous fixture guard admits the callback so seeds and mutations reach
+// response decoding. This synthetic guard does not model durable exclusion;
+// deterministic cases establish successful and malformed response outcomes.
 func FuzzLifecycleResponseBoundary(f *testing.F) {
 	f.Add(`{"acknowledged":true,"shards_acknowledged":true}`)
 	f.Add(`{"acknowledged":true,"shards_acknowledged":false}`)
@@ -101,13 +101,16 @@ func FuzzLifecycleResponseBoundary(f *testing.F) {
 		if len(body) > 8192 {
 			t.Skip()
 		}
-		client := fuzzSearchClient(t, body, &adapter.LifecycleConfig{Authorizer: adapter.LifecycleAuthorizerFunc(func(context.Context, string, []string) error { return nil })})
+		client := fuzzSearchClient(t, body, &adapter.LifecycleConfig{Authorizer: adapter.LifecycleAuthorizerFunc(func(context.Context, string, []string) error { return nil }), MutationGuard: allowLifecycleMutationGuard()})
 		limits := search.DefaultLimits()
 		definition, err := search.NewIndexDefinition("documents-v1", json.RawMessage(`{}`), json.RawMessage(`{"properties":{"name":{"type":"keyword"}}}`), limits)
 		if err != nil {
 			t.Fatal(err)
 		}
-		_ = client.CreateIndex(t.Context(), "tenant", definition)
+		err = client.CreateIndex(t.Context(), "tenant", definition)
+		if errors.Is(err, adapter.ErrLifecycleMutationGuardRequired) {
+			t.Fatal("lifecycle response fuzzing stopped before mutation admission and response decoding")
+		}
 	})
 }
 

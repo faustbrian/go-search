@@ -2,10 +2,25 @@
 
 ## Unreleased
 
+## 1.1.1 - 2026-10-14
+
+### Security
+
+- Classify pre-callback lifecycle guard cancellation and deadline causes in
+  adapter-owned error presentation while preserving deliberate `errors.Is` and
+  `errors.As` inspection. Private wrapper text no longer leaks through ordinary
+  traversal; application-extracted cause values remain trusted caller data.
+
+### Fixed
+
+- Admit lifecycle-response fuzz inputs through an explicit synchronous mutation
+  guard so accepted and malformed responses exercise the decoder boundary.
+
 ### Documentation
 
 - Clarify per-request transport admission, caller-owned trust and lifecycle
-  callbacks, formatter versus retained guard-cause privacy, PIT shutdown/cleanup
+  callbacks, classified guard-cause presentation and deliberate cause inspection,
+  PIT shutdown/cleanup
   limits, and renewed encrypted task cursors
   without changing the supported server/client matrix or executable behavior.
 

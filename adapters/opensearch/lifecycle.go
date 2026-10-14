@@ -758,10 +758,10 @@ func (client *Client) withLifecycleMutation(ctx context.Context, request Lifecyc
 	completedAtGuardReturn := completed.Load()
 	active.Store(false)
 	cancelOperation()
-	// Pre-callback context wrapping remains observable through Failure.Unwrap;
-	// application guards must keep that retained chain free of private details.
+	// Preserve explicit cause inspection without exposing coordinator text
+	// through the adapter-owned diagnostic chain before any dispatch.
 	if calls.Load() == 0 && (errors.Is(guardErr, context.Canceled) || errors.Is(guardErr, context.DeadlineExceeded)) {
-		return cancelledFailure(request.Operation, guardErr)
+		return cancelledFailure(request.Operation, &lifecycleGuardCause{cause: guardErr})
 	}
 	if calls.Load() == 0 {
 		return lifecycleMutationGuardFailure(request.Operation, true, nil)

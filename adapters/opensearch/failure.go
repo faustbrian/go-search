@@ -98,8 +98,8 @@ const (
 
 // Failure is mutable classified adapter error metadata. Adapter-created failures
 // exclude backend reason text and provider details, retaining only bounded codes
-// and classified causes. A mutation guard cancellation before callback execution
-// retains the guard error chain through Unwrap, so that chain must be secret-free.
+// and classified causes. Pre-callback mutation guard cancellations retain
+// errors.Is/errors.As inspection through a protected presentation boundary.
 // Public literals/field mutation do not receive adapter redaction guarantees, and
 // Retryable is advice rather than permission to replay mutations.
 type Failure struct {
@@ -146,10 +146,27 @@ func (failure *Failure) Error() string {
 }
 
 // Unwrap exposes the retained cause for errors.Is/errors.As. Provider/transport
-// details are reduced to owned classifications, but a pre-callback mutation guard
-// error wrapping cancellation/deadline is retained as supplied. Do not log that
-// chain without application sanitization; Error itself omits private cause text.
+// details are reduced to owned classifications. Pre-callback mutation guard
+// cancellations expose protected text while preserving errors.Is/errors.As
+// inspection. Deliberately extracted caller causes may contain private details.
 func (failure *Failure) Unwrap() error { return failure.cause }
+
+// lifecycleGuardCause protects adapter-owned presentation without discarding
+// the caller's cause. Inspection delegates to that trusted cause; it is not a
+// sandbox for arbitrary error methods or deliberately extracted private values.
+type lifecycleGuardCause struct{ cause error }
+
+func (*lifecycleGuardCause) Error() string {
+	return "search/opensearch: lifecycle guard cancellation"
+}
+
+func (cause *lifecycleGuardCause) Is(target error) bool {
+	return errors.Is(cause.cause, target)
+}
+
+func (cause *lifecycleGuardCause) As(target any) bool {
+	return errors.As(cause.cause, target)
+}
 
 func cancelledFailure(operation Operation, cause error) *Failure {
 	return &Failure{

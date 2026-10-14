@@ -51,7 +51,7 @@ use separate clients or roles.
 | mapping explosion | bounded canonical `IndexDefinition`, explicit templates, live-definition fingerprint attestation, separately authorized lifecycle | schema owners must constrain dynamic mappings and field cardinality |
 | field disclosure | complete query/projection/highlight/aggregation/suggestion/full-source authorization before resolution | application policy defines which principal may see each field |
 | poisoned documents/stale replay | bounded JSON object/depth/node/duplicate-key validation, external versions, durable pre-resolution write guard, mapping failures classified without reason leakage | source-of-truth validation, authoritative current-document/tombstone storage, and schema policy remain application-owned |
-| backend credential leakage | mutually exclusive secret providers/signing, TLS-only credentials, no URL userinfo, classified provider/policy/backend errors; mutation-guard cancellation chains require caller sanitization | operators own secret storage, rotation, and least-privilege roles |
+| backend credential leakage | mutually exclusive secret providers/signing, TLS-only credentials, no URL userinfo, classified provider/policy/backend errors; protected mutation-guard cancellation presentation | operators own secret storage, rotation, and least-privilege roles |
 
 Every valid search also requires `SearchAuthorizer` approval before the resolver
 or network is reached. The policy sees the full query tree, sort, projection,
@@ -83,13 +83,13 @@ Backend bodies, queries, sources, signed cursors, credentials, and authorization
 errors may contain secrets. Adapter failures expose bounded classifications and
 metadata instead of echoing response bodies or provider errors.
 
-The public Failure formatter omits private cause text, but Unwrap is a separate
-observable surface: if LifecycleMutationGuard returns a cancellation/deadline
-error before calling its operation, the current adapter retains that guard error
-chain. A wrapped context error may therefore expose application details through
-unwrapping even though Error is classified. Guards must return secret-free
-errors, and callers must sanitize chains before logging or tenant disclosure.
-This does not change or qualify the guarded backend outcome.
+The public `Failure` formatter omits private cause text. A pre-callback
+`LifecycleMutationGuard` cancellation now has protected adapter-owned unwrap
+presentation while retaining the original cause for `errors.Is` and `errors.As`.
+Deliberate inspection can retrieve caller-owned errors containing private details;
+applications must sanitize those extracted values before logging or disclosure.
+This is not a sandbox for arbitrary error methods or public field mutation, and
+it does not change the guarded backend outcome.
 
 Label-free does not mean tenant-scoped. `Info`, `Discover`, `Health`,
 `Capacity`, `ResilienceSnapshot`, and configured telemetry describe the shared

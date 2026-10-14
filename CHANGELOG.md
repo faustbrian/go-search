@@ -6,6 +6,10 @@ All notable changes to this module are documented here.
 
 ### Documentation
 
+- Distinguish classified OpenSearch lifecycle guard error presentation from
+  deliberate caller inspection of trusted causes. Root runtime behavior is
+  unchanged; the adapter repair is independently released.
+
 - Clarify mutable input versus constructor-owned copies, cursor authentication
   and resource ownership, callback cooperation, and reconciliation divergence
   without changing executable behavior.
