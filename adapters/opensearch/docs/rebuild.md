@@ -72,6 +72,37 @@ Rebuild and reconciliation workers must have explicit contexts, concurrency,
 bulk byte/item limits, durable checkpoints, and shutdown ownership. A failed
 run leaves the current alias untouched.
 
+### Maintained process-loss recipe
+
+The optional `rebuild_recovery` CI dispatch runs
+`scripts/test-rebuild-recovery.sh` against both pinned OpenSearch versions.
+It selects only
+`TestRealOpenSearchConformanceRebuildReconciliationRollbackAndConcurrentApplications`;
+it does not repeat the complete security, benchmark, or rolling matrix.
+Run it only on a disposable hosted runner with Docker and the pinned Go
+toolchain, from any directory:
+
+```sh
+/path/to/go-search/adapters/opensearch/scripts/test-rebuild-recovery.sh
+```
+
+The application fixture atomically persists its immutable source snapshot and
+commit high-water in the existing fsync-backed source file. Later source
+changes and their ordered replay intents share each persisted revision. One
+worker is killed after its first durable scan checkpoint; live source upsert
+and deletion commits then leave the frozen snapshot unchanged. A replacement
+is killed after its first durable replay checkpoint. A third, distinct process
+reopens the same source and progress checkpoint, completes the replay,
+including the tombstone, and exits. Two zero-drift passes and the existing
+write-fenced cutover check the result against real OpenSearch.
+
+This is a non-production filesystem application fixture and actual process
+replacement, not a PostgreSQL transaction adapter, concurrent multi-writer
+source store, host/power-loss test, or managed-service recovery promise.
+Applications must still supply the authoritative-store transaction/snapshot,
+commit ordering, deletion authority, checkpoints and writer fencing described
+above. The Search packages do not implement those application transactions.
+
 Every rebuild or replay write must also pass the adapter `WriteGuard` against
 the application-owned current document or tombstone. External versioning alone
 is insufficient: OpenSearch removes delete-version tombstones after

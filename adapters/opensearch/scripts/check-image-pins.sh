@@ -54,7 +54,7 @@ if [ "$opensearch_old_version" = "$opensearch_new_version" ] ||
 	exit 1
 fi
 
-for script in test-version-matrix.sh test-rolling-upgrade.sh test-security-matrix.sh; do
+for script in test-version-matrix.sh test-rolling-upgrade.sh test-security-matrix.sh test-rebuild-recovery.sh; do
 	if ! grep -F '. "$script_dir/opensearch-images.env"' "$script_dir/$script" >/dev/null; then
 		printf '%s does not load the canonical OpenSearch image identities\n' "$script" >&2
 		exit 1
@@ -67,6 +67,7 @@ done
 
 if ! grep -F 'image="$opensearch_image_repository@$digest"' "$script_dir/test-version-matrix.sh" >/dev/null ||
 	! grep -F 'image="$opensearch_image_repository@$digest"' "$script_dir/test-security-matrix.sh" >/dev/null ||
+	! grep -F 'image="$opensearch_image_repository@$digest"' "$script_dir/test-rebuild-recovery.sh" >/dev/null ||
 	! grep -F 'old_image="$opensearch_image_repository@$opensearch_old_digest"' "$script_dir/test-rolling-upgrade.sh" >/dev/null ||
 	! grep -F 'new_image="$opensearch_image_repository@$opensearch_new_digest"' "$script_dir/test-rolling-upgrade.sh" >/dev/null; then
 	printf 'OpenSearch execution scripts do not consume the canonical image identities\n' >&2

@@ -795,6 +795,19 @@ func TestRealOpenSearchConformanceRebuildReconciliationRollbackAndConcurrentAppl
 		t.Fatalf("ResolveAlias() after alias rollback = %q/%v", resolved, resolveErr)
 	}
 	highWaterDocuments := append([]search.Document(nil), authoritativeDocuments...)
+	rebuildDirectory := t.TempDir()
+	rebuildSource, err := newDurableAuthoritativeStore(rebuildDirectory, tenant, logicalIndex, highWaterDocuments, limits)
+	if err != nil {
+		t.Fatal(err)
+	}
+	snapshotID := sourceDefinition.Fingerprint() + ":source-revision-at-high-water"
+	if err := rebuildSource.captureRebuildSnapshot(snapshotID); err != nil {
+		t.Fatal(err)
+	}
+	checkpointPath := filepath.Join(rebuildDirectory, "rebuild-checkpoint.json")
+	if err := saveDurableRebuildCheckpoint(checkpointPath, durableRebuildCheckpoint{SnapshotID: snapshotID}); err != nil {
+		t.Fatal(err)
+	}
 	outboxDocument := write(client, "source-after-high-water", 31, json.RawMessage(`{"name":"durable-outbox"}`))
 	authoritativeDocuments = append(authoritativeDocuments, outboxDocument)
 	deletedAfterHighWater := highWaterDocuments[len(highWaterDocuments)-1]
@@ -823,83 +836,36 @@ func TestRealOpenSearchConformanceRebuildReconciliationRollbackAndConcurrentAppl
 	if err := client.AddAlias(t.Context(), tenant, repairAlias, target, true); err != nil {
 		t.Fatal(err)
 	}
-	rebuildDirectory := t.TempDir()
-	rebuildSource, err := newDurableAuthoritativeStore(rebuildDirectory, tenant, logicalIndex, highWaterDocuments, limits)
-	if err != nil {
-		t.Fatal(err)
+	worker := rebuildProcessConfig{
+		Endpoint: endpoint, SourcePath: rebuildSource.path, CheckpointPath: checkpointPath,
+		SnapshotID: snapshotID, Tenant: tenant, Index: logicalIndex,
+		Alias: repairAlias, Physical: target, Fingerprint: targetDefinition.Fingerprint(),
 	}
-	snapshotID := sourceDefinition.Fingerprint() + ":source-revision-at-high-water"
-	checkpointPath := filepath.Join(rebuildDirectory, "rebuild-checkpoint.json")
-	checkpoint := durableRebuildCheckpoint{SnapshotID: snapshotID}
-	if err := saveDurableRebuildCheckpoint(checkpointPath, checkpoint); err != nil {
-		t.Fatal(err)
-	}
-	copyPage := func(reader *durableAuthoritativeStore, current durableRebuildCheckpoint) (durableRebuildCheckpoint, error) {
-		page, readErr := reader.Read(t.Context(), tenant, logicalIndex, current.SourceCursor, 1)
-		if readErr != nil {
-			return current, readErr
-		}
-		operations := make([]search.WriteOperation, len(page.Records))
-		for position, record := range page.Records {
-			operations[position] = search.IndexDocument(*record.Document)
-		}
-		if len(operations) != 0 {
-			result, bulkErr := repairClient.Bulk(t.Context(), search.BulkRequest{Operations: operations, Refresh: search.RefreshWaitFor})
-			if bulkErr != nil || result.Partial() {
-				return current, fmt.Errorf("rebuild source page = %#v/%v", result.Items(), bulkErr)
-			}
-		}
-		current.SourceCursor = page.Cursor
-		current.SourceComplete = page.Done
-		if saveErr := saveDurableRebuildCheckpoint(checkpointPath, current); saveErr != nil {
-			return current, saveErr
-		}
-		return current, nil
-	}
-	checkpoint, err = copyPage(rebuildSource, checkpoint)
-	if err != nil || checkpoint.SourceComplete {
-		t.Fatalf("interrupted rebuild first checkpoint = %#v/%v", checkpoint, err)
-	}
-	checkpoint, err = loadDurableRebuildCheckpoint(checkpointPath, snapshotID)
-	if err != nil {
-		t.Fatal(err)
-	}
-	restartedSource := &durableAuthoritativeStore{
-		path: rebuildSource.path, tenant: tenant, index: logicalIndex, limits: limits,
-	}
-	for !checkpoint.SourceComplete {
-		checkpoint, err = copyPage(restartedSource, checkpoint)
-		if err != nil {
-			t.Fatal(err)
-		}
-	}
-	checkpoint, err = loadDurableRebuildCheckpoint(checkpointPath, snapshotID)
-	if err != nil || !checkpoint.SourceComplete || checkpoint.SourceCursor != "" || checkpoint.OutboxCursor != 0 {
-		t.Fatalf("resumed source checkpoint = %#v/%v", checkpoint, err)
-	}
-	outbox := []search.WriteOperation{
-		search.IndexDocument(outboxDocument),
-		search.DeleteDocument(tenant, logicalIndex, deletedAfterHighWater.ID, deleteVersion),
-	}
-	for checkpoint.OutboxCursor < len(outbox) {
-		outcome, replayErr := repairClient.Write(t.Context(), outbox[checkpoint.OutboxCursor], search.RefreshWaitFor)
-		if replayErr != nil || outcome.State != search.OutcomeApplied {
-			t.Fatalf("outbox replay %d = %#v/%v", checkpoint.OutboxCursor, outcome, replayErr)
-		}
-		checkpoint.OutboxCursor++
-		if err := saveDurableRebuildCheckpoint(checkpointPath, checkpoint); err != nil {
-			t.Fatal(err)
-		}
-		checkpoint, err = loadDurableRebuildCheckpoint(checkpointPath, snapshotID)
-		if err != nil {
-			t.Fatal(err)
-		}
+	// The first worker is killed with a persisted partial scan. Application writes
+	// commit to the same durable source revision and outbox after that snapshot.
+	firstPID := runRebuildProcess(t, worker, "scan")
+	checkpoint, err := loadDurableRebuildCheckpoint(checkpointPath, snapshotID)
+	if err != nil || checkpoint.SourceComplete || checkpoint.SourceCursor == "" || checkpoint.OutboxCursor != 0 {
+		t.Fatalf("killed scan checkpoint = %#v/%v", checkpoint, err)
 	}
 	if err := rebuildSource.Put(t.Context(), outboxDocument); err != nil {
 		t.Fatal(err)
 	}
 	if err := rebuildSource.Delete(t.Context(), deletedAfterHighWater.ID, deleteVersion); err != nil {
 		t.Fatal(err)
+	}
+	secondPID := runRebuildProcess(t, worker, "replay")
+	checkpoint, err = loadDurableRebuildCheckpoint(checkpointPath, snapshotID)
+	if err != nil || !checkpoint.SourceComplete || checkpoint.SourceCursor != "" || checkpoint.OutboxCursor != 1 {
+		t.Fatalf("killed replay checkpoint = %#v/%v", checkpoint, err)
+	}
+	finalPID := runRebuildProcess(t, worker, "")
+	if firstPID == secondPID || firstPID == finalPID || secondPID == finalPID {
+		t.Fatal("rebuild must resume in distinct replacement processes")
+	}
+	checkpoint, err = loadDurableRebuildCheckpoint(checkpointPath, snapshotID)
+	if err != nil || !checkpoint.SourceComplete || checkpoint.SourceCursor != "" || checkpoint.OutboxCursor != 2 {
+		t.Fatalf("replacement replay checkpoint = %#v/%v", checkpoint, err)
 	}
 	rebuildReconciler, err := search.NewReconciler(rebuildSource, targetReaderClient, repairClient, limits)
 	if err != nil {
@@ -1256,11 +1222,15 @@ type durableAuthoritativeDocument struct {
 }
 
 type durableAuthoritativeState struct {
-	Revision   uint64                         `json:"revision"`
-	Tenant     string                         `json:"tenant"`
-	Index      string                         `json:"index"`
-	Documents  []durableAuthoritativeDocument `json:"documents"`
-	Tombstones map[string]uint64              `json:"tombstones"`
+	Revision         uint64                         `json:"revision"`
+	Tenant           string                         `json:"tenant"`
+	Index            string                         `json:"index"`
+	Documents        []durableAuthoritativeDocument `json:"documents"`
+	Tombstones       map[string]uint64              `json:"tombstones"`
+	SnapshotID       string                         `json:"snapshot_id,omitempty"`
+	SnapshotRevision uint64                         `json:"snapshot_revision,omitempty"`
+	Snapshot         []durableAuthoritativeDocument `json:"snapshot,omitempty"`
+	Outbox           []durableProjectionCommit      `json:"outbox,omitempty"`
 }
 
 // durableAuthoritativeStore is a real fsync-backed source fixture. Its reader
@@ -1270,6 +1240,7 @@ type durableAuthoritativeStore struct {
 	mu                  sync.Mutex
 	path, tenant, index string
 	limits              search.Limits
+	snapshot            bool
 }
 
 func newDurableAuthoritativeStore(directory, tenant, index string, documents []search.Document, limits search.Limits) (*durableAuthoritativeStore, error) {
@@ -1304,6 +1275,9 @@ func (store *durableAuthoritativeStore) Read(ctx context.Context, tenant, index,
 	state, err := store.loadLocked()
 	if err != nil {
 		return search.ReconciliationPage{}, err
+	}
+	if store.snapshot {
+		state.Documents, state.Revision = state.Snapshot, state.SnapshotRevision
 	}
 	start := 0
 	if cursor != "" {
@@ -1397,6 +1371,9 @@ func (store *durableAuthoritativeStore) Put(ctx context.Context, document search
 		return errors.New("authoritative source revision space exhausted")
 	}
 	state.Revision++
+	if state.SnapshotID != "" {
+		state.Outbox = append(state.Outbox, durableProjectionCommit{Revision: state.Revision, Document: persisted})
+	}
 	return store.saveLocked(state)
 }
 
@@ -1427,6 +1404,9 @@ func (store *durableAuthoritativeStore) Delete(ctx context.Context, id string, v
 		return errors.New("authoritative source revision space exhausted")
 	}
 	state.Revision++
+	if state.SnapshotID != "" {
+		state.Outbox = append(state.Outbox, durableProjectionCommit{Revision: state.Revision, Deleted: true, Document: durableAuthoritativeDocument{ID: id, Version: version}})
+	}
 	return store.saveLocked(state)
 }
 

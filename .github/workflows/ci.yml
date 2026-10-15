@@ -18,6 +18,11 @@ on:
         required: false
         default: ''
         type: string
+      rebuild_recovery:
+        description: Run only the pinned OpenSearch process-loss rebuild recipe
+        required: false
+        default: false
+        type: boolean
 
 permissions:
   contents: read
@@ -34,14 +39,40 @@ jobs:
       release_dry_run: ${{ inputs.release_dry_run || false }}
       release_module: ${{ inputs.release_module || '' }}
 
+  rebuild_recovery:
+    name: OpenSearch process-loss rebuild
+    if: github.event_name == 'workflow_dispatch' && inputs.rebuild_recovery
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: .go-version
+          cache: false
+      - name: Kill and replace checkpointed rebuild workers
+        run: ./adapters/opensearch/scripts/test-rebuild-recovery.sh
+
   required:
     name: Required
     if: always()
-    needs: ci
+    needs: [ci, rebuild_recovery]
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     steps:
       - name: Require shared workflow
         env:
           CI_RESULT: ${{ needs.ci.result }}
-        run: test "${CI_RESULT}" = success
+          REBUILD_REQUESTED: ${{ github.event_name == 'workflow_dispatch' && inputs.rebuild_recovery || false }}
+          REBUILD_RESULT: ${{ needs.rebuild_recovery.result }}
+        run: |
+          test "${CI_RESULT}" = success
+          if [ "${REBUILD_REQUESTED}" = true ]; then
+            test "${REBUILD_RESULT}" = success
+          else
+            test "${REBUILD_RESULT}" = skipped
+          fi
