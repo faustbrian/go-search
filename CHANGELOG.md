@@ -14,6 +14,14 @@ All notable changes to this module are documented here.
   and resource ownership, callback cooperation, and reconciliation divergence
   without changing executable behavior.
 
+## 1.2.0 - 2026-10-22
+
+### Changed
+
+- Publish the current source and documentation with a fresh immutable tag.
+- Publish independently versioned modules from the same source snapshot:
+  - `adapters/opensearch/v1.1.2`.
+
 ## 1.1.0 - 2026-10-06
 
 ### Changed
