@@ -1,6 +1,6 @@
 # OpenSearch API and compatibility inventory
 
-Implementation baseline: OpenSearch `2.19.6` and `3.8.0`, with
+Implementation baseline: OpenSearch `2.19.8` and `3.10.1`, with
 `github.com/opensearch-project/opensearch-go/v4` `v4.8.0`. These exact server
 images form the release conformance matrix. A different patch, plugin set, or
 managed-service feature profile is outside the proven matrix until added and
@@ -121,6 +121,6 @@ Primary references:
 
 - <https://docs.opensearch.org/latest/clients/go/>
 - <https://github.com/opensearch-project/opensearch-go/tree/v4.8.0>
-- <https://github.com/opensearch-project/OpenSearch/releases/tag/2.19.6>
-- <https://github.com/opensearch-project/OpenSearch/releases/tag/3.8.0>
+- <https://github.com/opensearch-project/OpenSearch/releases/tag/2.19.8>
+- <https://github.com/opensearch-project/OpenSearch/releases/tag/3.10.1>
 - <https://docs.opensearch.org/latest/api-reference/>

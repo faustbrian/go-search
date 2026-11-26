@@ -1,5 +1,5 @@
 // Package opensearch implements the production OpenSearch adapter for search.
-// It uses opensearch-go/v4 4.8.0 for the exact OpenSearch 2.19.6/3.8.0 matrix,
+// It uses opensearch-go/v4 4.8.0 for the exact OpenSearch 2.19.8/3.10.1 matrix,
 // while owning request admission, authentication, decoding, and idle-resource
 // lifecycle. Applications own tenant policy, durable versions, migration fences,
 // semantic verification, retries, and deployment. The maintained policy register

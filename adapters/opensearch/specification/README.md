@@ -39,6 +39,58 @@ decision digest.
 
 The version matrix is provider interoperability and version-differential evidence. It does not imply equivalent ranking, mappings, analyzers, plugins, managed-service extensions, or unlisted patch behavior. Release and errata feed drift blocks the online check pending review and never changes behavior automatically.
 
+## Server matrix adoption: 2026-11-26
+
+Review owner: OpenSearch adapter maintainers. The supported server matrix
+moves from 2.19.6 and 3.8.0 to the current patch releases, OpenSearch
+[2.19.8](https://github.com/opensearch-project/OpenSearch/releases/tag/2.19.8)
+and [3.10.1](https://github.com/opensearch-project/OpenSearch/releases/tag/3.10.1);
+`opensearch-go/v4` stays at 4.8.0. This supersedes the "matrix stays" verdict
+of the release-feed review below.
+
+| Pin | Previous | Current |
+| --- | --- | --- |
+| 2.19 source commit | `97d3c13bf22a4a72ac11dc503fe44c97662b9161` | `b11b1e2cedf8e72b37d629956a0a740871f20a50` |
+| 2.19 source archive SHA-256 | `290a4eaf01a2518673fef28f348d44dc67b1b681693f0e7456a8f9c27c5c5acb` | `3d7d7a076c25da37034f0679b6b0e3927bb3d60ee897c1219798f635cb227db4` |
+| 3.x source commit | `e5a3c5691be87af6c12dbe3e158c59c04ee72973` | `8f41a7a09efd4fc25dfb52f8fa392a1bb930c260` |
+| 3.x source archive SHA-256 | `f44b9342b958a3082f971207f46eb88c25d3004268555e1f2472b6a7346305d8` | `43489f9905ed878ad5e45f5c856fad835e75bd46187370ec04379020dd830340` |
+| 2.19 image index digest | `sha256:8690b204fe914c60ca76d451ac73bc0481e034d32d3779944c8caca56a2b003f` | `sha256:0171f36eee4c50f5251e858458216612c4b86bbf4cba4eb28e3b0708944266cf` |
+| 3.x image index digest | `sha256:bcc1797519726ceb6d651d4a3e60b7c30da91793914a8dfe75fd441d4f641509` | `sha256:02358b2be62b268a404a54581184d027ac0dfa8f875be15fe4c4fa3f8884f464` |
+
+Each commit is the one its release tag names. Each archive digest was stable
+across two independent downloads, and each image digest is the multi-arch index
+the registry serves for the release tag. The monitored `cluster.health`,
+`search`, `bulk` and `reindex` REST specification files are byte-identical at
+the old and new commits, so their content digests are unchanged and only their
+URLs, versions and specification names moved. Across the whole REST
+specification, 2.19.8 changes only `nodes.hot_threads`; 3.10.1 adds a `limit`
+parameter to the `_cat` APIs, adds the cluster describe-settings and task
+deletion APIs, and updates documentation links, including the one for
+`delete_pit`. The adapter calls none of the changed or added APIs, and the
+`delete_pit` request shape is unchanged.
+
+The 2.19.7 and 2.19.8 server hardening was dispositioned in the release-feed
+review below; 2.19.7 also fixes
+[GHSA-68xw-fqpj-h922](https://github.com/opensearch-project/OpenSearch/security/advisories/GHSA-68xw-fqpj-h922),
+a node halt on a zstd-encoded request body that affected the previous 2.19.6
+pin. 3.10.0 fixes bulk request corruption on shard indexing backpressure
+([#20727](https://github.com/opensearch-project/OpenSearch/pull/20727)): a
+shard rejection now fails only that shard's items with a per-item HTTP 429
+`rejected_execution_exception`. Decision 012 already classifies a per-item 429
+as a retryable rejection while preserving every other item's outcome, and the
+bulk partial-outcome unit test pins that classification, so no adapter code
+changes. 3.10.0 also removes the experimental Views feature, which the adapter
+never called. 3.10.1 fixes scripted source reads on compound segments and
+updates its JDK and Reactor dependencies.
+
+Decision 001 names the new matrix. Every decision whose source authority is a
+server specification takes the new specification name and version, and each
+new canonical digest is appended to the decision history; decisions 002 to 005
+and 017 bind only the client authority and keep their digests. Decision 018
+requires the real-server conformance run for a source pin change; the version,
+security and rolling-upgrade matrices ran on the new image digests for this
+adoption.
+
 ## Client adoption: 2026-10-06
 
 The current matrix adopts `opensearch-go/v4` `4.8.0` at immutable source

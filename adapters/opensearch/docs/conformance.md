@@ -1,6 +1,6 @@
 # OpenSearch conformance
 
-The supported runtime matrix is exactly OpenSearch 2.19.6 and 3.8.0 with
+The supported runtime matrix is exactly OpenSearch 2.19.8 and 3.10.1 with
 `opensearch-go/v4` 4.8.0. The source archives and their reviewed SHA-256
 digests are pinned in the
 [specification manifest](../specification/manifest.tsv). Observable REST and

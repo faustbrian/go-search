@@ -11,7 +11,7 @@ contract.
 The adapter is stable at v1.0.0 and supports Go 1.26.6 on platforms where the
 Go HTTP client and the selected credential provider are supported. Current
 unreleased source requires Go 1.27.0. Its exact backend contract is OpenSearch
-2.19.6 or 3.8.0 over HTTPS/JSON REST with `opensearch-go/v4` v4.8.0.
+2.19.8 or 3.10.1 over HTTPS/JSON REST with `opensearch-go/v4` v4.8.0.
 
 ## Install
 

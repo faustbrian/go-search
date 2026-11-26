@@ -192,17 +192,17 @@
         "integration"
       ],
       "interoperability_tools": [
-        "OpenSearch 2.19.6",
-        "OpenSearch 3.8.0",
+        "OpenSearch 2.19.8",
+        "OpenSearch 3.10.1",
         "opensearch-go/v4 v4.8.0"
       ],
       "specifications": [
-        "OpenSearch REST API 2.19.6",
-        "OpenSearch REST API 3.8.0",
+        "OpenSearch REST API 2.19.8",
+        "OpenSearch REST API 3.10.1",
         "OpenSearch Go client 4.8.0"
       ],
       "conformance_corpora": [
-        "Pinned OpenSearch 2.19.6 and 3.8.0 source and REST API matrix",
+        "Pinned OpenSearch 2.19.8 and 3.10.1 source and REST API matrix",
         "Real-backend shared semantics, lifecycle, failure, and upgrade evidence"
       ],
       "provenance": [
