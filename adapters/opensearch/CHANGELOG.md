@@ -5,8 +5,10 @@
 ### Changed
 
 - Support exactly OpenSearch 2.19.8 and 3.10.1, replacing 2.19.6 and 3.8.0,
-  with `opensearch-go/v4` v4.8.0 unchanged. `SupportedOpenSearchVersions` now
-  returns the new versions, and the source pins, image digests and decision
+  with `opensearch-go/v4` v4.8.0 unchanged. `SupportedOpenSearchVersions` and the
+  exported `OpenSearch2Version` and `OpenSearch3Version` constants now
+  return the new versions, an intentional value change recorded in the API
+  baseline, and the source pins, image digests and decision
   records name them. Upgrade 2.19 clusters to 2.19.8: 2.19.4 through 2.19.6
   halt a node on a zstd-encoded request body (GHSA-68xw-fqpj-h922). On 3.10,
   a shard backpressure rejection fails only that shard's bulk items, which the
