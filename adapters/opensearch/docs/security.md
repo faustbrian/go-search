@@ -100,8 +100,9 @@ their results in a tenant-keyed application surface.
 The real security matrix uses separate credentials on both supported server
 versions. Its runtime role can read and write only the tenant-A index/alias
 pattern; tenant-B reads and writes, cluster health, and Security administration
-must return HTTP 403. OpenSearch 3.8.0 additionally requires the top-level
-`indices:data/write/bulk` cluster action before it resolves the destination;
+must return HTTP 403. OpenSearch 3.x, first observed on 3.8.0, additionally
+requires the top-level `indices:data/write/bulk` cluster action before it
+resolves the destination;
 the role retains tenant enforcement through its tenant-A-only index actions,
 and the matrix proves that the transport admission does not permit tenant-B
 writes. A distinct operator role has `cluster_monitor` plus management of only
@@ -113,10 +114,24 @@ published GitHub advisories list CVE-2023-31419 and CVE-2022-41917, both fixed
 well before the supported 2.19.6 and 3.8.0 server versions. The 3.8.0 release
 also upgrades dependencies for CVE-2026-8149, CVE-2026-54515, and
 CVE-2026-2332, and hardens deserialization and filesystem path boundaries.
+The 2026-11-26 review moved the supported servers to 2.19.8 and 3.10.1.
+[GHSA-68xw-fqpj-h922](https://github.com/opensearch-project/OpenSearch/security/advisories/GHSA-68xw-fqpj-h922)
+lets a single request with a `Content-Encoding: zstd` body halt a node on
+OpenSearch 2.19.4 through 2.19.6, including the previously supported 2.19.6; it
+is fixed in 2.19.7, and 3.x is not affected. The adapter never sends a zstd
+request body, but any client the cluster accepts requests from can, including
+anonymous clients where allowed, so deployments still on 2.19.6 must upgrade. 2.19.7 and 2.19.8 also bound query-string nesting,
+completion-suggester automaton size, deserialization recursion, scroll IDs,
+`min_hash` parameters and filesystem-repository paths, and block ptrace
+syscalls.
+
 Operators must still review OpenSearch, plugin, JVM, image, and managed-service
 advisories for their exact deployment before every release.
 
 Primary references:
 
 - <https://github.com/opensearch-project/OpenSearch/security/advisories>
+- <https://github.com/opensearch-project/OpenSearch/security/advisories/GHSA-68xw-fqpj-h922>
+- <https://github.com/opensearch-project/OpenSearch/releases/tag/2.19.8>
+- <https://github.com/opensearch-project/OpenSearch/releases/tag/3.10.1>
 - <https://github.com/opensearch-project/OpenSearch/releases/tag/3.8.0>

@@ -23,7 +23,7 @@
       ],
       "differential_classification": "maintained peer agreement",
       "public_behavior": [
-        "The supported matrix is exactly OpenSearch 2.19.6, OpenSearch 3.8.0, and opensearch-go/v4 4.8.0; no other patch, plugin, analyzer, mapping, distribution, or managed-service profile is implied compatible."
+        "The supported matrix is exactly OpenSearch 2.19.8, OpenSearch 3.10.1, and opensearch-go/v4 4.8.0; no other patch, plugin, analyzer, mapping, distribution, or managed-service profile is implied compatible."
       ]
     },
     {

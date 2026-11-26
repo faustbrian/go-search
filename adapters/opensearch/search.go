@@ -893,7 +893,7 @@ func encodeSearchRequest(request search.Request, state search.CursorState, local
 	return json.Marshal(body)
 }
 
-// The exact OpenSearch 2.19.6/3.8.0 wire profile is application policy, not
+// The exact OpenSearch 2.19.8/3.10.1 wire profile is application policy, not
 // portable ranking: OPENSEARCH-DEC-006/-008 in docs/specification-decisions.md
 // and TestSearchEncodingWireContract protect these translations. Explicit zero
 // minimum_should_match is retained by TestEncodeBoolPreservesZeroMinimumShouldMatchSemantics;
