@@ -48,6 +48,63 @@ reviews below remain historical dispositions, not the current client pin.
 The adapter still owns transport, retries, admission, and response bounds;
 the official AWS signer now propagates request cancellation to credentials.
 
+## Release-feed review: 2026-11-26
+
+Review owner: OpenSearch adapter maintainers. All seven monitoring entries
+were retrieved with the checker's request profile. The five immutable source
+authorities match their existing pins. The two release feeds moved; each new
+digest was stable across two independent requests:
+
+| Authority | Previous SHA-256 | Current SHA-256 |
+| --- | --- | --- |
+| `opensearch-releases` | `918a2a81dad88c4a8748bc6f134827aeac600d196642b02670c96d6f575e64f8` | `7be78aac0942aea57191ea88abba53d89704dedaf83f98d4185bbd878bb755b9` |
+| `opensearch-go-releases` | `5338117cdde28ee79e978fff6f56cf2b38cff6479fc7f09cfd94642c6848362d` | `e6d626a68448234f09e60a1a0fb8b6ccf64eb8bb1ff452ae7de89a617cbc3a31` |
+
+The server feed added
+[2.19.7](https://github.com/opensearch-project/OpenSearch/releases/tag/2.19.7),
+[2.19.8](https://github.com/opensearch-project/OpenSearch/releases/tag/2.19.8),
+[3.10.0](https://github.com/opensearch-project/OpenSearch/releases/tag/3.10.0)
+and [3.10.1](https://github.com/opensearch-project/OpenSearch/releases/tag/3.10.1);
+3.9.0 was dispositioned on 2026-10-02. The 2.19 patches are server-side
+hardening of the supported line: a `query_string` nesting limit, the
+completion-suggester `max_determinized_states` cap, Mustache partial
+resolution disabled in search templates, bounded JSON deserialization
+recursion, stricter `scroll_id` validation, filesystem-repository `base_path`
+validation, bounded `min_hash` parameters, a ptrace syscall filter and
+dependency updates. The adapter's typed encoder emits none of the affected
+constructs: full text becomes `multi_match`, suggestions emit only prefix
+completion options, pagination uses PIT with `search_after` rather than
+scroll, and the adapter issues no search-template or snapshot-repository
+requests. Analyzer and filter definitions, including any `min_hash` filter,
+remain application-owned index-template content under decision 014, and
+`RawExtensionQuery` remains an authorizer-gated, caller-owned query payload.
+3.10.0 removes the experimental Views feature and macOS x64 archives, neither
+used here, and returns per-item errors instead of failing a whole bulk
+request on shard indexing backpressure. That 3.10 behavior is outside the
+supported matrix; adopting it requires the real-server conformance run that
+decision 018 sets for any source pin change.
+
+The client feed added
+[v4.8.1](https://github.com/opensearch-project/opensearch-go/releases/tag/v4.8.1),
+[v4.8.2](https://github.com/opensearch-project/opensearch-go/releases/tag/v4.8.2)
+and v5.0.2 through v5.2.1. v4.8.1 changes no client code; it raises the
+repository toolchain and bumps AWS SDK patch versions, which this module
+resolves through its own `go.mod`. v4.8.2 changes only the official
+`opensearchtransport` router's node selection. The adapter supplies its own
+`poolTransport` and uses only the root client's `Stream` call and the
+`signer` package, so
+neither patch reaches an adapter path. v5 remains an unadopted major version
+whose partial-failure defaults differ from v4; upstream now describes v4 as
+maintenance-only.
+
+No REST path, parameter, JSON shape, retry ownership, cursor, versioning or
+lifecycle surface changes. The supported matrix stays exactly OpenSearch
+2.19.6 and 3.8.0 with `opensearch-go/v4` 4.8.0; all twenty-three decisions,
+source pins and conformance bindings remain unchanged.
+Moving the matrix to a newer patch release is a separate supported-matrix and
+conformance change. Only the two release-feed digests above were updated;
+URLs and the 30-day interval are unchanged.
+
 ## Release-feed review: 2026-10-02
 
 Review owner: OpenSearch adapter maintainers. This source-based review of the
