@@ -119,8 +119,8 @@ The 2026-11-26 review moved the supported servers to 2.19.8 and 3.10.1.
 lets a single request with a `Content-Encoding: zstd` body halt a node on
 OpenSearch 2.19.4 through 2.19.6, including the previously supported 2.19.6; it
 is fixed in 2.19.7, and 3.x is not affected. The adapter never sends a zstd
-request body, but any client that can reach the node can, so deployments still
-on 2.19.6 must upgrade. 2.19.7 and 2.19.8 also bound query-string nesting,
+request body, but any client the cluster accepts requests from can, including
+anonymous clients where allowed, so deployments still on 2.19.6 must upgrade. 2.19.7 and 2.19.8 also bound query-string nesting,
 completion-suggester automaton size, deserialization recursion, scroll IDs,
 `min_hash` parameters and filesystem-repository paths, and block ptrace
 syscalls.
